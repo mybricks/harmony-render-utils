@@ -1,5 +1,5 @@
 import { AnyType, AnyObjectType } from "./any"
-import { Subject } from "./mybricks"
+import { Subject } from "../utils/mybricks"
 
 export declare namespace MyBricks {
   type Any = AnyType

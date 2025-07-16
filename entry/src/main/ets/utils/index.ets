@@ -1,5 +1,7 @@
-export type { MyBricks } from "./types";
 export { genCallConnector } from "./CallConnector";
+
+export { context } from "./context";
+
 export {
   createJSHandle,
   createInputsHandle,

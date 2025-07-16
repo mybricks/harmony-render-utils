@@ -74,7 +74,8 @@ const createReactiveInputHandler = (params) => {
       input(value, new Proxy({}, {
         get(_, key) {
           return (value) => {
-            (rels[key] || (rels[key] = new Subject({log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}`}))).next(value)
+            (rels[key] ||
+              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` }))).next(value)
           }
         }
       }))
@@ -84,7 +85,8 @@ const createReactiveInputHandler = (params) => {
       {
         get(_, key) {
           return (value) => {
-            (rels[key] || (rels[key] = new Subject({log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}`}))).next(value)
+            (rels[key] ||
+              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` }))).next(value)
           }
         }
       }
@@ -94,7 +96,7 @@ const createReactiveInputHandler = (params) => {
   return new Proxy({},
     {
       get(_, key) {
-        return rels[key] || (rels[key] = new Subject({log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}`}))
+        return rels[key] || (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` }))
       }
     }
   )
@@ -108,7 +110,7 @@ export const createInputsHandle = (that, init = false) => {
     /** 输入未完成注册，写入todo列表 */
     const _inputEventsTodo = {}
     /** 组件基础信息 */
-const _comInfo = {}
+    const _comInfo = {}
 
     const proxy = new Proxy({}, {
       get(_, key) {
@@ -117,10 +119,10 @@ const _comInfo = {}
           return _inputEvents;
         } else if (key === "_inputEventsTodo") {
           return _inputEventsTodo
-        }else if (key === "_comInfo") {
+        } else if (key === "_comInfo") {
           return _comInfo
         }
-          
+
         return (value) => {
           if (!_inputEvents[key]) {
             // 组件未完成输入注册
@@ -259,7 +261,8 @@ export const createJSHandle = (fn, options) => {
     },
     get(_, key) {
       return (value) => {
-        (rels[key] || (rels[key] = new Subject({log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}`}))).next(value)
+        (rels[key] ||
+          (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}` }))).next(value)
       }
     }
   })
@@ -280,7 +283,7 @@ export const createJSHandle = (fn, options) => {
     {},
     {
       get(_, key) {
-        return rels[key] || (rels[key] = new Subject({log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}`}))
+        return rels[key] || (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}` }))
       },
     },
   )
@@ -311,7 +314,7 @@ export const createJSHandle = (fn, options) => {
           } else {
             log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[index]}`, JSON.stringify(value));
             valueAry[props.inputs[index]] = value
-            
+
             if (Object.keys(valueAry).length === length) {
               createReactiveInputHandler({
                 input: controller,
@@ -359,7 +362,8 @@ export const createJSHandle = (fn, options) => {
 export const createEventsHandle = (params) => {
   return new Proxy(params.events, {
     get(target, key) {
-      return target[key] || (() => {})
+      return target[key] || (() => {
+      })
     }
   })
 }
@@ -646,8 +650,8 @@ export const createSlotsIO = () => {
   })
 }
 
-/** 
- * 模块 
+/**
+ * 模块
  * [TODO] 暂时无法在多处使用关联输出项
  */
 export const createModuleInputsHandle = () => {
