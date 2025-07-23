@@ -160,44 +160,52 @@ export const createInputsHandle = (that, init = false) => {
     return proxy;
   } else {
     const { controller, columnVisibilityController, title } = that
-    const { _inputEvents, _comInfo } = controller
+    const { _inputEvents, _comInfo, _inputEventsTodo } = controller
     _comInfo.title = title;
 
+    const createVisibilityHandler = (visibilityState) => {
+      return (value) => {
+        const setVisibility = () => {
+          columnVisibilityController.setVisibility(visibilityState)
+        }
+        if (value?.subscribe) {
+          value.subscribe(setVisibility);
+        } else {
+          setVisibility()
+        }
+      };
+    };
+
     // 内置显示隐藏逻辑
-    _inputEvents.show = (value) => {
-      if (value?.subscribe) {
-        value.subscribe((value) => {
-          columnVisibilityController.setVisibility(Visibility.Visible)
-        });
-      } else {
-        columnVisibilityController.setVisibility(Visibility.Visible)
-      }
-    }
-    _inputEvents.hide = (value) => {
-      if (value?.subscribe) {
-        value.subscribe((value) => {
-          columnVisibilityController.setVisibility(Visibility.None)
-        });
-      } else {
-        columnVisibilityController.setVisibility(Visibility.None)
-      }
-    }
+    _inputEvents.show = createVisibilityHandler(Visibility.Visible)
+    _inputEvents.hide = createVisibilityHandler(Visibility.None)
     _inputEvents.showOrHide = (value) => {
-      if (value?.subscribe) {
-        value.subscribe((value) => {
-          columnVisibilityController.setVisibility(!!value ? Visibility.Visible : Visibility.None)
-        });
-      } else {
+      const setVisibility = (value) => {
         columnVisibilityController.setVisibility(!!value ? Visibility.Visible : Visibility.None)
       }
+      if (value?.subscribe) {
+        value.subscribe(setVisibility)
+      } else {
+        setVisibility(value)
+      }
     }
+    // 处理显示隐藏todo项
+    ["show", "hide", "showOrHide"].forEach((key) => {
+      const todo = _inputEventsTodo[key]
+      if (todo) {
+        Reflect.deleteProperty(_inputEventsTodo, key)
+
+        todo.forEach(({ value }) => {
+          _inputEvents[key](value)
+        })
+      }
+    })
 
     const proxy = new Proxy(controller, {
       get(_, key) {
         return (input) => {
           if (!_inputEvents[key]) {
             // 第一次注册，处理TODO
-            const _inputEventsTodo = controller._inputEventsTodo
             if (_inputEventsTodo[key]) {
               _inputEventsTodo[key].forEach(({ value, rels }) => {
                 createReactiveInputHandler({
