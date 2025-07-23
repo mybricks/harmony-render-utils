@@ -1,3 +1,11 @@
+# [1.0.3](https://github.com/mybricks/harmony-render-utils/compare/be97356..1fb1f6a) (2025-07-23)
+ - 添加api兼容性处理
+
+# [1.0.2](https://github.com/mybricks/harmony-render-utils/compare/c6ae118..be97356) (2025-07-23)
+ - 支持监听变量的变更
+ - 添加api处理
+ - 添加Api类型定义
+
 # [1.0.1](https://github.com/mybricks/harmony-render-utils/commit/ec801248c633fce53da5df3b4f0ccb6111383261) (2025-07-16)
  - 初始化ui相关功能
 
