@@ -1,3 +1,6 @@
+# [1.0.4](https://github.com/mybricks/harmony-render-utils/compare/3dfb615..6579231) (2025-07-23)
+ - 修复显示隐藏输入列入todo后未执行
+
 # [1.0.3](https://github.com/mybricks/harmony-render-utils/compare/be97356..1fb1f6a) (2025-07-23)
  - 添加api兼容性处理
 
