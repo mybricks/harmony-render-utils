@@ -501,7 +501,8 @@ export const createVariable = (initValue, callBack) => {
   const value = new Subject()
   value.next(initValue)
   const ref = {
-    value
+    value,
+    valueChanges: new Set()
   }
 
   return {
@@ -522,6 +523,9 @@ export const createVariable = (initValue, callBack) => {
       const nextValue = new Subject()
       const next = (value) => {
         ref.value.next(value)
+        ref.valueChanges.forEach((valueChange) => {
+          valueChange(value)
+        })
         nextValue.next(value)
         callBack(value)
       }
@@ -539,6 +543,9 @@ export const createVariable = (initValue, callBack) => {
       const nextValue = new Subject()
       const next = () => {
         ref.value.next(initValue)
+        ref.valueChanges.forEach((valueChange) => {
+          valueChange(initValue)
+        })
         nextValue.next(initValue)
         callBack(initValue)
       }
@@ -550,6 +557,35 @@ export const createVariable = (initValue, callBack) => {
         next()
       }
       return nextValue
+    },
+    /** 值变更监听 */
+    changed() {
+      const subject = new Subject();
+
+      const change = (value) => {
+        subject.next(value)
+      }
+
+      ref.valueChanges.add(change);
+
+      const result = {
+        destroy() {
+          ref.valueChanges.delete(change)
+        },
+        subscribe(next) {
+          subject.subscribe(next)
+        }
+      }
+
+      if (apiRun) {
+        if (!apiRunVariablesSubject[apiRun]) {
+          apiRunVariablesSubject[apiRun] = [result]
+        } else {
+          apiRunVariablesSubject[apiRun].push(result)
+        }
+      }
+
+      return result
     }
   }
 }
@@ -718,4 +754,44 @@ export const createStyles = (params) => {
     return other
   }
   return styles
+}
+
+/** [TODO] 记录API调用过程中变量的监听，调用回调后销毁 */
+let apiRun = null;
+let apiRunVariablesSubject = {};
+
+export const api = (fn) => {
+  return (value, cb) => {
+    const id = Math.random();
+    let isDestroy = false;
+    apiRun = id;
+    fn(value, new Proxy(cb, {
+      get(target, key) {
+        return (value) => {
+          if (value?.subscribe) {
+            value.subscribe((next) => {
+              if (isDestroy) {
+                return
+              }
+              isDestroy = true
+              target[key](next)
+              apiRunVariablesSubject[id]?.forEach((subject) => {
+                subject.destroy()
+              })
+            })
+          } else {
+            if (isDestroy) {
+              return
+            }
+            isDestroy = true
+            target[key](value)
+            apiRunVariablesSubject[id]?.forEach((subject) => {
+              subject.destroy()
+            })
+          }
+        }
+      }
+    }))
+    apiRun = null;
+  }
 }
