@@ -761,7 +761,7 @@ let apiRun = null;
 let apiRunVariablesSubject = {};
 
 export const api = (fn) => {
-  return (value, cb) => {
+  return (value, cb = {}) => {
     const id = Math.random();
     let isDestroy = false;
     apiRun = id;
@@ -774,7 +774,7 @@ export const api = (fn) => {
                 return
               }
               isDestroy = true
-              target[key](next)
+              target[key]?.(next)
               apiRunVariablesSubject[id]?.forEach((subject) => {
                 subject.destroy()
               })
@@ -784,7 +784,7 @@ export const api = (fn) => {
               return
             }
             isDestroy = true
-            target[key](value)
+            target[key]?.(value)
             apiRunVariablesSubject[id]?.forEach((subject) => {
               subject.destroy()
             })
