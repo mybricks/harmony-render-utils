@@ -15,5 +15,6 @@ export {
   createStyles,
   Subject,
   emit,
-  api
+  api,
+  transformApi
 } from "./mybricks";

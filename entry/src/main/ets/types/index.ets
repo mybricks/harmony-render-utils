@@ -84,5 +84,5 @@ export declare namespace MyBricks {
     reset: (value: Any) => Subject
   }
 
-  type Api = Any
+  type Api = (value: Any, callBack?: Any) => Controller
 }

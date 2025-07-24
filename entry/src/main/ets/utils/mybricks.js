@@ -803,3 +803,58 @@ export const api = (fn) => {
     apiRun = null;
   }
 }
+
+export const transformApi = (api) => {
+  return (value, cb) => {
+    const id = `${Math.random()}_${new Date().getTime()}`
+    const outputs = {}
+    const dispose = () => {
+      
+    }
+    const proxy = new Proxy(dispose, {
+      get(_, key) {
+        return outputs[key] || (outputs[key] = new Subject())
+      }
+    })
+    let isDispose = false;
+
+    apiRun = id;
+
+    const res = api(value)
+
+    apiRun = null;
+
+    if (res) {
+      Object.entries(res).forEach(([key, value]) => {
+        if (!outputs[key]) {
+          outputs[key] = new Subject()
+        }
+        if (value?.subscribe) {
+          value.subscribe((value) => {
+            if (isDispose) {
+              return
+            }
+            isDispose = true
+            outputs[key].next(value)
+            cb?.[key]?.(value)
+            apiRunVariablesSubject[id]?.forEach((subject) => {
+              subject.destroy()
+            })
+          })
+        } else {
+          if (isDispose) {
+            return
+          }
+          isDispose = true
+          outputs[key].next(value)
+          cb?.[key]?.(value)
+          apiRunVariablesSubject[id]?.forEach((subject) => {
+            subject.destroy()
+          })
+        }
+      })
+    }
+
+    return proxy
+  }
+}
