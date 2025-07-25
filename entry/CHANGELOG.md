@@ -1,3 +1,7 @@
+# [1.0.5](https://github.com/mybricks/harmony-render-utils/compare/327cd8f..bfe64b1) (2025-07-23)
+ - 添加transformApi
+ - 更新Api类型定义
+
 # [1.0.4](https://github.com/mybricks/harmony-render-utils/compare/3dfb615..6579231) (2025-07-23)
  - 修复显示隐藏输入列入todo后未执行
 
