@@ -1,3 +1,7 @@
+# [1.0.6](https://github.com/mybricks/harmony-render-utils/compare/9aa5657..1b9e63c) (2025-07-28)
+ - 支持新特性(系统总线)
+ - 去除废弃代码(api)
+
 # [1.0.5](https://github.com/mybricks/harmony-render-utils/compare/327cd8f..bfe64b1) (2025-07-23)
  - 添加transformApi
  - 更新Api类型定义
