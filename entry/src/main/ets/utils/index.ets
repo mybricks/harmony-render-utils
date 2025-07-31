@@ -17,5 +17,6 @@ export {
   emit,
   transformApi,
   transformBus,
-  createBus
+  createBus,
+  join
 } from "./mybricks";

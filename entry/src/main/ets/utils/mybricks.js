@@ -616,6 +616,12 @@ export const createFx = (fx) => {
   return (value, ...args) => {
     const outputs = {}
 
+    const proxy = new Proxy({}, {
+      get(_, key) {
+        return outputs[key] || (outputs[key] = new Subject())
+      }
+    })
+
     const next = (value) => {
       const res = fx(value, ...args)
       if (res) {
@@ -642,7 +648,7 @@ export const createFx = (fx) => {
       next(value)
     }
 
-    return outputs
+    return proxy
   }
 }
 
@@ -868,3 +874,24 @@ export const createBus = (bus) => {
     })
   }
 }
+
+export const join = (lastSubject, nextSubject) => {
+  const subject = new Subject();
+  const next = () => {
+    if (nextSubject?.subscribe) {
+      subject.next(nextSubject.value);
+    } else {
+      subject.next(nextSubject);
+    }
+  }
+
+  if (lastSubject?.subscribe) {
+    lastSubject.subscribe(() => {
+      next()
+    });
+  } else {
+    next()
+  }
+
+  return subject;
+};
