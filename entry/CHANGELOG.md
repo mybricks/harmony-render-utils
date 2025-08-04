@@ -1,3 +1,6 @@
+# [1.0.7](https://github.com/mybricks/harmony-render-utils/compare/190b20c..aa1655a) (2025-07-31)
+ - 添加join，用于贯通前后节点
+
 # [1.0.6](https://github.com/mybricks/harmony-render-utils/compare/9aa5657..1b9e63c) (2025-07-28)
  - 支持新特性(系统总线)
  - 去除废弃代码(api)
