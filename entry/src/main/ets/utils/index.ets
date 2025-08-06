@@ -18,5 +18,6 @@ export {
   transformApi,
   transformBus,
   createBus,
-  join
+  join,
+  createModuleEventsHandle
 } from "./mybricks";

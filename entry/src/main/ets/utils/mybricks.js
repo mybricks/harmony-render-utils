@@ -376,6 +376,27 @@ export const createEventsHandle = (params) => {
   })
 }
 
+// 区块事件
+export const createModuleEventsHandle = (events) => {
+  return new Proxy(events, {
+    get(_, key) {
+      const event = events[key];
+
+      if (event) {
+        return (value) => {
+          if (value?.subscribe) {
+            value.subscribe((value) => {
+              events[key]?.(value)
+            })
+          } else {
+            events[key]?.(value)
+          }
+        }
+      }
+    }
+  })
+}
+
 // 场景打开、输出
 export const pageController = () => {
   return new Proxy({
