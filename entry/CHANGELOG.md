@@ -1,3 +1,6 @@
+# [1.0.8](https://github.com/mybricks/harmony-render-utils/compare/a896baf..5077937) (2025-08-06)
+ - 添加createModuleEventsHandle，处理区块的events
+
 # [1.0.7](https://github.com/mybricks/harmony-render-utils/compare/190b20c..aa1655a) (2025-07-31)
  - 添加join，用于贯通前后节点
 
