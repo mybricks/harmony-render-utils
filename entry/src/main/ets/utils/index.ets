@@ -19,5 +19,6 @@ export {
   transformBus,
   createBus,
   join,
-  createModuleEventsHandle
+  createModuleEventsHandle,
+  createModifier
 } from "./mybricks";
