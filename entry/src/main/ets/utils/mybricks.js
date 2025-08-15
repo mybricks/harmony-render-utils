@@ -111,6 +111,8 @@ export const createInputsHandle = (that, init = false) => {
     const _inputEventsTodo = {}
     /** 组件基础信息 */
     const _comInfo = {}
+    /** 全局 */
+    const _context = {}
 
     const proxy = new Proxy({}, {
       get(_, key) {
@@ -121,6 +123,8 @@ export const createInputsHandle = (that, init = false) => {
           return _inputEventsTodo
         } else if (key === "_comInfo") {
           return _comInfo
+        } else if (key === "_context") {
+          return _context
         }
 
         return (value) => {
@@ -159,14 +163,19 @@ export const createInputsHandle = (that, init = false) => {
 
     return proxy;
   } else {
-    const { controller, columnVisibilityController, title } = that
-    const { _inputEvents, _comInfo, _inputEventsTodo } = controller
+    const { columnVisibilityController, title } = that
+    const controller = that.controller || createInputsHandle({}, true);
+    const { _inputEvents, _comInfo, _inputEventsTodo, _context } = controller
     _comInfo.title = title;
 
     const createVisibilityHandler = (visibilityState) => {
       return (value) => {
         const setVisibility = () => {
-          columnVisibilityController.setVisibility(visibilityState)
+          if (columnVisibilityController) {
+            columnVisibilityController.setVisibility(visibilityState)
+          } else if (_context.modifier) {
+            _context.modifier.attribute?.visibility(visibilityState)
+          }
         }
         if (value?.subscribe) {
           value.subscribe(setVisibility);
@@ -181,7 +190,11 @@ export const createInputsHandle = (that, init = false) => {
     _inputEvents.hide = createVisibilityHandler(Visibility.None)
     _inputEvents.showOrHide = (value) => {
       const setVisibility = (value) => {
-        columnVisibilityController.setVisibility(!!value ? Visibility.Visible : Visibility.None)
+        if (columnVisibilityController) {
+          columnVisibilityController.setVisibility(!!value ? Visibility.Visible : Visibility.None)
+        } else if (_context.modifier) {
+          _context.modifier.attribute?.visibility(!!value ? Visibility.Visible : Visibility.None)
+        }
       }
       if (value?.subscribe) {
         value.subscribe(setVisibility)
@@ -189,7 +202,7 @@ export const createInputsHandle = (that, init = false) => {
         setVisibility(value)
       }
     }
-    // 处理显示隐藏todo项
+      // 处理显示隐藏todo项
     ["show", "hide", "showOrHide"].forEach((key) => {
       const todo = _inputEventsTodo[key]
       if (todo) {
@@ -368,7 +381,7 @@ export const createJSHandle = (fn, options) => {
 
 // 事件
 export const createEventsHandle = (params) => {
-  return new Proxy(params.events, {
+  return new Proxy(params.events || {}, {
     get(target, key) {
       return target[key] || (() => {
       })
@@ -803,7 +816,7 @@ export const transformApi = (api) => {
     const id = `${Math.random()}_${new Date().getTime()}`
     const outputs = {}
     const dispose = () => {
-      
+
     }
     const proxy = new Proxy(dispose, {
       get(_, key) {
@@ -916,3 +929,10 @@ export const join = (lastSubject, nextSubject) => {
 
   return subject;
 };
+
+export const createModifier = (params, Modifier) => {
+  if (params.controller) {
+    return params.controller._context.modifier = new Modifier();
+  }
+  return
+}

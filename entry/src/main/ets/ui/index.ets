@@ -1,3 +1,4 @@
+import { AttributeUpdater } from "@ohos.arkui.modifier"
 import type { MyBricks } from "../types";
 
 type Style = Record<string, string | number>;
@@ -5,12 +6,11 @@ type Styles = Record<string, Style>;
 
 interface MyBricksComponentBuilderParams {
   uid: string
-  controller: MyBricks.Controller
+  title?: string
+  controller?: MyBricks.Controller
   data: MyBricks.Data
-  events: MyBricks.Events
+  events?: MyBricks.Events
   styles: Styles
-  columnVisibilityController: ColumnVisibilityController
-  myBricksColumnModifier: MyBricksColumnModifier
   slots?: (params: MyBricks.SlotParams) => void
   slotsIO?: MyBricks.Any
   parentSlot?: MyBricks.SlotParams
@@ -83,8 +83,11 @@ class ColumnVisibilityController {
 function Slot(params: MyBricks.SlotParams) {
 }
 
+class CommonModifier extends AttributeUpdater<CommonAttribute> {
+}
+
 export {
-  MyBricksColumnModifier, ColumnVisibilityController, Slot, }
+  MyBricksColumnModifier, ColumnVisibilityController, Slot, CommonModifier }
 
 export type {
   MyBricksComponentBuilderParams, Style, Styles
