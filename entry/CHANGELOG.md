@@ -1,3 +1,6 @@
+# [1.0.9](https://github.com/mybricks/harmony-render-utils/compare/bc568e1..4cbcabd) (2025-08-15)
+ - 添加createModifier、CommonModifier等用于操作组件显示、隐藏，优化组件层级过多问题
+
 # [1.0.8](https://github.com/mybricks/harmony-render-utils/compare/a896baf..5077937) (2025-08-06)
  - 添加createModuleEventsHandle，处理区块的events
 
