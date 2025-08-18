@@ -1,3 +1,6 @@
+# [1.0.11](https://github.com/mybricks/harmony-render-utils/compare/f00e9fe..7627eb8) (2025-08-18)
+ - 导出merge，用于处理输出项被多次调用场景
+
 # [1.0.10](https://github.com/mybricks/harmony-render-utils/compare/f00e9fe..7627eb8) (2025-08-15)
  - 导出createModifier
 
