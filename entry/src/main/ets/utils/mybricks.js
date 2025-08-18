@@ -46,16 +46,20 @@ export class Subject {
 }
 
 /** 合并数据流 */
-export const mergeSubjects = (...subjects) => {
-  const mergeSubject = new Subject()
+export const merge = (...subjects) => {
+  const merge = new Subject()
 
   subjects.forEach((subject) => {
-    subject.subscribe((value) => {
-      mergeSubject.next(value)
-    })
+    if (subject?.subscribe) {
+      subject.subscribe((value) => {
+        merge.next(value)
+      })
+    } else {
+      merge.next(subject)
+    }
   })
 
-  return mergeSubject
+  return merge
 }
 
 /** utils */
