@@ -1,3 +1,7 @@
+# [1.0.12](https://github.com/mybricks/harmony-render-utils/compare/c902d11..c706aa8) (2025-08-19)
+ - CommonModifier支持传入初始值
+ - 支持缓存data、inputs、outputs、style、modifier
+
 # [1.0.11](https://github.com/mybricks/harmony-render-utils/compare/f00e9fe..7627eb8) (2025-08-18)
  - 导出merge，用于处理输出项被多次调用场景
 
