@@ -1,3 +1,6 @@
+# [1.0.13](https://github.com/mybricks/harmony-render-utils/compare/dbedc11..87b5e53) (2025-08-19)
+ - 导出createData
+
 # [1.0.12](https://github.com/mybricks/harmony-render-utils/compare/c902d11..c706aa8) (2025-08-19)
  - CommonModifier支持传入初始值
  - 支持缓存data、inputs、outputs、style、modifier
