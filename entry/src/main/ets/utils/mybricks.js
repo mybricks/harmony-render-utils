@@ -107,7 +107,7 @@ const createReactiveInputHandler = (params) => {
 }
 
 // UI
-export const createInputsHandle = (that, init = false) => {
+export const createInputsHandle = (params, init = false) => {
   if (init) {
     /** 注册的输入 */
     const _inputEvents = {}
@@ -167,84 +167,90 @@ export const createInputsHandle = (that, init = false) => {
 
     return proxy;
   } else {
-    const { columnVisibilityController, title } = that
-    const controller = that.controller || createInputsHandle({}, true);
-    const { _inputEvents, _comInfo, _inputEventsTodo, _context } = controller
-    _comInfo.title = title;
+    if (!params.controller._context.inputs) {
+      const { controller, title } = params
+      const { _inputEvents, _comInfo, _inputEventsTodo, _context } = controller
+      _comInfo.title = title;
+      _context.initModifier = {
+        visibility: Visibility.Visible
+      }
 
-    const createVisibilityHandler = (visibilityState) => {
-      return (value) => {
-        const setVisibility = () => {
-          if (columnVisibilityController) {
-            columnVisibilityController.setVisibility(visibilityState)
-          } else if (_context.modifier) {
-            _context.modifier.attribute?.visibility(visibilityState)
+      const createVisibilityHandler = (visibilityState) => {
+        return (value) => {
+          const setVisibility = () => {
+            if (!_context.modifier?.attribute) {
+              _context.initModifier.visibility = visibilityState
+            } else {
+              _context.modifier.attribute?.visibility(visibilityState)
+            }
+          }
+          if (value?.subscribe) {
+            value.subscribe(setVisibility);
+          } else {
+            setVisibility()
+          }
+        };
+      };
+
+      // 内置显示隐藏逻辑
+      _inputEvents.show = createVisibilityHandler(Visibility.Visible)
+      _inputEvents.hide = createVisibilityHandler(Visibility.None)
+      _inputEvents.showOrHide = (value) => {
+        const setVisibility = (value) => {
+          if (!_context.modifier?.attribute) {
+            _context.initModifier.visibility = !!value ? Visibility.Visible : Visibility.None
+          } else {
+            _context.modifier.attribute?.visibility(!!value ? Visibility.Visible : Visibility.None)
           }
         }
         if (value?.subscribe) {
-          value.subscribe(setVisibility);
+          value.subscribe(setVisibility)
         } else {
-          setVisibility()
-        }
-      };
-    };
-
-    // 内置显示隐藏逻辑
-    _inputEvents.show = createVisibilityHandler(Visibility.Visible)
-    _inputEvents.hide = createVisibilityHandler(Visibility.None)
-    _inputEvents.showOrHide = (value) => {
-      const setVisibility = (value) => {
-        if (columnVisibilityController) {
-          columnVisibilityController.setVisibility(!!value ? Visibility.Visible : Visibility.None)
-        } else if (_context.modifier) {
-          _context.modifier.attribute?.visibility(!!value ? Visibility.Visible : Visibility.None)
+          setVisibility(value)
         }
       }
-      if (value?.subscribe) {
-        value.subscribe(setVisibility)
-      } else {
-        setVisibility(value)
-      }
-    }
-      // 处理显示隐藏todo项
-    ["show", "hide", "showOrHide"].forEach((key) => {
-      const todo = _inputEventsTodo[key]
-      if (todo) {
-        Reflect.deleteProperty(_inputEventsTodo, key)
+        // 处理显示隐藏todo项
+      ["show", "hide", "showOrHide"].forEach((key) => {
+        const todo = _inputEventsTodo[key]
+        if (todo) {
+          Reflect.deleteProperty(_inputEventsTodo, key)
 
-        todo.forEach(({ value }) => {
-          _inputEvents[key](value)
-        })
-      }
-    })
+          todo.forEach(({ value }) => {
+            _inputEvents[key](value)
+          })
+        }
+      })
 
-    const proxy = new Proxy(controller, {
-      get(_, key) {
-        return (input) => {
-          if (!_inputEvents[key]) {
-            // 第一次注册，处理TODO
-            if (_inputEventsTodo[key]) {
-              _inputEventsTodo[key].forEach(({ value, rels }) => {
-                createReactiveInputHandler({
-                  input(value, proxy) {
-                    log(`${EXE_TITLE_MAP["input"]} ${title} | ${key}`, JSON.stringify(value))
-                    return input(value, proxy)
-                  },
-                  title,
-                  value,
-                  rels
+      const proxy = new Proxy(controller, {
+        get(_, key) {
+          return (input) => {
+            if (!_inputEvents[key]) {
+              // 第一次注册，处理TODO
+              if (_inputEventsTodo[key]) {
+                _inputEventsTodo[key].forEach(({ value, rels }) => {
+                  createReactiveInputHandler({
+                    input(value, proxy) {
+                      log(`${EXE_TITLE_MAP["input"]} ${title} | ${key}`, JSON.stringify(value))
+                      return input(value, proxy)
+                    },
+                    title,
+                    value,
+                    rels
+                  })
                 })
-              })
-              Reflect.deleteProperty(_inputEventsTodo, key)
+                Reflect.deleteProperty(_inputEventsTodo, key)
+              }
             }
+
+            _inputEvents[key] = input
           }
-
-          _inputEvents[key] = input
         }
-      }
-    })
+      })
 
-    return proxy
+      params.controller._context.inputs = proxy;
+    }
+
+    return params.controller._context.inputs
   }
 }
 
@@ -385,12 +391,16 @@ export const createJSHandle = (fn, options) => {
 
 // 事件
 export const createEventsHandle = (params) => {
-  return new Proxy(params.events || {}, {
-    get(target, key) {
-      return target[key] || (() => {
-      })
-    }
-  })
+  if (!params.controller._context.outputs) {
+    params.controller._context.outputs = new Proxy(params.events || {}, {
+      get(target, key) {
+        return target[key] || (() => {
+        })
+      }
+    })
+  }
+
+  return params.controller._context.outputs
 }
 
 // 区块事件
@@ -800,12 +810,17 @@ export const createModuleInputsHandle = () => {
  * 组件样式
  */
 export const createStyles = (params) => {
-  const { styles, parentSlot } = params;
-  if (parentSlot?.itemWrap) {
-    const { root, ...other } = parentSlot
-    return other
+  if (!params.controller._context.styles) {
+    const { styles, parentSlot } = params;
+    if (parentSlot?.itemWrap) {
+      const { root, ...other } = parentSlot
+      params.controller._context.styles = other
+    } else {
+      params.controller._context.styles = styles;
+    }
   }
-  return styles
+
+  return params.controller._context.styles
 }
 
 /** [TODO] 记录API调用过程中变量的监听，调用回调后销毁 */
@@ -935,8 +950,16 @@ export const join = (lastSubject, nextSubject) => {
 };
 
 export const createModifier = (params, Modifier) => {
-  if (params.controller) {
-    return params.controller._context.modifier = new Modifier();
+  if (!params.controller._context.modifier) {
+    params.controller._context.modifier = new Modifier(params.controller._context.initModifier);
   }
-  return
+  return params.controller._context.modifier
+}
+
+export const createData = (params, Data) => {
+  if (!params.controller._context.data) {
+    params.controller._context.data = new Data(params.data)
+  }
+
+  return params.controller._context.data
 }

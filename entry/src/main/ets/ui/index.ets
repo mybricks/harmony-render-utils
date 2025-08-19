@@ -83,7 +83,21 @@ class ColumnVisibilityController {
 function Slot(params: MyBricks.SlotParams) {
 }
 
+interface CommonModifierParams {
+  visibility: Visibility
+}
+
 class CommonModifier extends AttributeUpdater<CommonAttribute> {
+  private _initModifier: CommonModifierParams;
+
+  constructor(_initModifier: CommonModifierParams) {
+    super();
+    this._initModifier = _initModifier;
+  }
+
+  initializeModifier(instance: CommonAttribute): void {
+    instance.visibility(this._initModifier.visibility)
+  }
 }
 
 export {
