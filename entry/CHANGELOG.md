@@ -1,3 +1,6 @@
+# [1.0.14](https://github.com/mybricks/harmony-render-utils/compare/7054e1c..343ef72) (2025-08-25)
+ - 添加装饰器MyBricksDescriptor支持，简化区块部分内置代码
+
 # [1.0.13](https://github.com/mybricks/harmony-render-utils/compare/dbedc11..87b5e53) (2025-08-19)
  - 导出createData
 
