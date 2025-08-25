@@ -963,3 +963,25 @@ export const createData = (params, Data) => {
 
   return params.controller._context.data
 }
+
+export function MyBricksDescriptor(params) {
+  const { navigation, provider } = params;
+
+  return (target, key, descriptor) => {
+    const originalMethod = descriptor.value
+    descriptor.value = function (...args) {
+      if (this.navigation?.navPathStack) {
+        navigation.registConfig({
+          navPathStack: this.navigation.navPathStack,
+          entryRouter: this.navigation?.entryRouter
+        })
+      }
+      if (this[provider] && this.events) {
+        this[provider].events = createModuleEventsHandle(this.events);
+      }
+      const result = originalMethod.apply(this, args);
+      return result
+    }
+    return descriptor
+  }
+}

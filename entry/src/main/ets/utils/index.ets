@@ -22,5 +22,6 @@ export {
   createModuleEventsHandle,
   createModifier,
   merge,
-  createData
+  createData,
+  MyBricksDescriptor
 } from "./mybricks";
