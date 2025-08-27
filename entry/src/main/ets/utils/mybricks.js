@@ -701,51 +701,55 @@ export const createFx = (fx) => {
 }
 
 /** 创建插槽IO */
-export const createSlotsIO = () => {
-  const slotsIOMap = {}
-  return new Proxy({}, {
-    get(_, key) {
-      if (!slotsIOMap[key]) {
-        const inputsMap = {}
-        slotsIOMap[key] = {
-          inputs: new Proxy({}, {
-            get(_, key) {
-              if (!inputsMap[key]) {
-                inputsMap[key] = new Subject()
-              }
+export const createSlotsIO = (params) => {
+  if (!params.controller._context.slotsIO) {
+    const slotsIOMap = {}
+    params.controller._context.slotsIO = new Proxy({}, {
+      get(_, key) {
+        if (!slotsIOMap[key]) {
+          const inputsMap = {}
+          slotsIOMap[key] = {
+            inputs: new Proxy({}, {
+              get(_, key) {
+                if (!inputsMap[key]) {
+                  inputsMap[key] = new Subject()
+                }
 
-              const next = (value) => {
-                inputsMap[key].next(value)
-              }
+                const next = (value) => {
+                  inputsMap[key].next(value)
+                }
 
-              next.subscribe = (next) => {
-                inputsMap[key].subscribe(next)
-              }
+                next.subscribe = (next) => {
+                  inputsMap[key].subscribe(next)
+                }
 
-              return next
-            }
-          }),
-          outputs: new Proxy({}, {
-            get(_, key) {
-              return (next) => {
-                return (value) => {
-                  if (value?.subscribe) {
-                    value.subscribe((value) => {
+                return next
+              }
+            }),
+            outputs: new Proxy({}, {
+              get(_, key) {
+                return (next) => {
+                  return (value) => {
+                    if (value?.subscribe) {
+                      value.subscribe((value) => {
+                        next(value)
+                      })
+                    } else {
                       next(value)
-                    })
-                  } else {
-                    next(value)
+                    }
                   }
                 }
               }
-            }
-          })
+            })
+          }
         }
-      }
 
-      return slotsIOMap[key]
-    }
-  })
+        return slotsIOMap[key]
+      }
+    })
+  }
+
+  return params.controller._context.slotsIO
 }
 
 /**
