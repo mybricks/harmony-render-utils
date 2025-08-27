@@ -1,3 +1,6 @@
+# [1.0.15](https://github.com/mybricks/harmony-render-utils/compare/6613f48..0711c90) (2025-08-27)
+ - createSlotsIO持久化处理
+
 # [1.0.14](https://github.com/mybricks/harmony-render-utils/compare/7054e1c..343ef72) (2025-08-25)
  - 添加装饰器MyBricksDescriptor支持，简化区块部分内置代码
 
