@@ -1,3 +1,6 @@
+# [1.0.16](https://github.com/mybricks/harmony-render-utils/compare/26e7820..bfa4d46) (2025-08-29)
+ - 修复CallConnector的错误拦截
+
 # [1.0.15](https://github.com/mybricks/harmony-render-utils/compare/6613f48..0711c90) (2025-08-27)
  - createSlotsIO持久化处理
 
