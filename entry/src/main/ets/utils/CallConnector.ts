@@ -138,15 +138,6 @@ const getFetch = (connector, appContext) => {
       config
         .ajax(options)
         .then((response) => {
-          console.log("response", response);
-          if (response?.statusCode !== 200) {
-            return connector.globalErrorResultFn(
-              { error: response, response: response, config: {} },
-              { throwError: onError }
-            );
-            // return onError(response.statusCode);
-          }
-
           /** 全局响应值处理 */
           return connector.globalResultFn(
             // { response, config: options },
