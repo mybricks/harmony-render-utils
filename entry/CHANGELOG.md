@@ -1,3 +1,6 @@
+# [1.0.18](https://github.com/mybricks/harmony-render-utils/compare/50f5795..a23c466) (2025-09-03)
+ - 更新装饰器，注入区块的data、controller
+
 # [1.0.17](https://github.com/mybricks/harmony-render-utils/compare/164f1e3..5481b03) (2025-09-03)
  - 支持区块获取输入项
 
