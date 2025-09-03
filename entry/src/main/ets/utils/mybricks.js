@@ -986,8 +986,16 @@ export function MyBricksDescriptor(params) {
           entryRouter: this.navigation?.entryRouter
         })
       }
-      if (this[provider] && this.events) {
-        this[provider].events = createModuleEventsHandle(this.events);
+      if (this[provider]) {
+        if (this.events) {
+          this[provider].events = createModuleEventsHandle(this.events);
+        }
+        if (this.data) {
+          this[provider].data = this.data;
+        }
+        if (this.controller) {
+          this[provider].controller = this.controller;
+        }
       }
       const result = originalMethod.apply(this, args);
       return result
