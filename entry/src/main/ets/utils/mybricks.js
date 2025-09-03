@@ -801,11 +801,17 @@ export const createModuleInputsHandle = () => {
         })
       }
 
-      next.subscribe = (next) => {
-        inputsMap[key].subscribe(next)
-      }
-
-      return next
+      return new Proxy(next, {
+        get(_, proxyKey) {
+          if (proxyKey === "subscribe") {
+            return (next) => {
+              inputsMap[key].subscribe(next)
+            }
+          } else if (proxyKey === "value") {
+            return inputsMap[key].value
+          }
+        }
+      })
     }
   })
 }
