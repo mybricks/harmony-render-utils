@@ -1,3 +1,6 @@
+# [1.0.17](https://github.com/mybricks/harmony-render-utils/compare/164f1e3..5481b03) (2025-09-03)
+ - 支持区块获取输入项
+
 # [1.0.16](https://github.com/mybricks/harmony-render-utils/compare/26e7820..bfa4d46) (2025-08-29)
  - 修复CallConnector的错误拦截
 
