@@ -1,3 +1,6 @@
+# [1.0.19](https://github.com/mybricks/harmony-render-utils/compare/7e4e00a..a019ecc) (2025-09-08)
+ - MyBricksColumnModifier兼容style为空的情况
+
 # [1.0.18](https://github.com/mybricks/harmony-render-utils/compare/50f5795..a23c466) (2025-09-03)
  - 更新装饰器，注入区块的data、controller
 
