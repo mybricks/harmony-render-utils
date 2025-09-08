@@ -25,6 +25,9 @@ class MyBricksColumnModifier implements AttributeModifier<ColumnAttribute> {
 
   applyNormalAttribute(instance: ColumnAttribute): void {
     const style = this.style;
+    if (!style) {
+      return;
+    }
     // width
     instance.width(style.width);
     // height
