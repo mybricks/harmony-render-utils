@@ -1,3 +1,6 @@
+# [1.0.20](https://github.com/mybricks/harmony-render-utils/compare/6f2d464..cf29e47) (2025-09-11)
+ - 路由pop时机优化
+
 # [1.0.19](https://github.com/mybricks/harmony-render-utils/compare/7e4e00a..a019ecc) (2025-09-08)
  - MyBricksColumnModifier兼容style为空的情况
 
