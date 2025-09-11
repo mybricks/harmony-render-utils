@@ -486,9 +486,17 @@ export class Page {
   /** 确定 */
   commit(name, value) {
     const params = this.appRouter.getParams(name)
-    this.appRouter.pop()
+
     setTimeout(() => {
-      params.controller.commit.next(value)
+      if (value?.subscribe) {
+        value.subscribe((value) => {
+          params.controller.commit.next(value)
+          this.appRouter.pop()
+        })
+      } else {
+        params.controller.commit.next(value)
+        this.appRouter.pop()
+      }
     }, 100)
   }
 
@@ -497,22 +505,41 @@ export class Page {
     const params = this.appRouter.getParams(name)
     this.appRouter.pop()
     setTimeout(() => {
-      params.controller.cancel.next(value)
+      if (value?.subscribe) {
+        value.subscribe((value) => {
+          params.controller.cancel.next(value)
+        })
+      } else {
+        params.controller.cancel.next(value)
+      }
     }, 100)
   }
 
   /** 应用，不关闭 */
   apply(name, value) {
     const params = this.appRouter.getParams(name)
-    params.controller.apply.next(value)
+    if (value?.subscribe) {
+      value.subscribe((value) => {
+        params.controller.apply.next(value)
+      })
+    } else {
+      params.controller.apply.next(value)
+    }
   }
 
   /** 关闭 */
   close(name, value) {
     const params = this.appRouter.getParams(name)
-    this.appRouter.pop()
     setTimeout(() => {
-      params.controller.close.next(value)
+      if (value?.subscribe) {
+        value.subscribe((value) => {
+          params.controller.close.next(value)
+          this.appRouter.pop()
+        })
+      } else {
+        params.controller.close.next(value)
+        this.appRouter.pop()
+      }
     }, 100)
   }
 }
