@@ -902,8 +902,13 @@ class Styles {
   }
 
   getStyle(key) {
+    let style = this.styles[key]
+    if (!style) {
+      this.styles[key] = {}
+      style = this.styles[key]
+    }
     return {
-      style: this.styles[key],
+      style,
       setUpdator: (updator) => {
         if (!this.selectorToUpdatorsMap.has(key)) {
           this.selectorToUpdatorsMap.set(key, new Set())
@@ -911,7 +916,7 @@ class Styles {
 
         this.selectorToUpdatorsMap.get(key).add(updator)
       },
-      ...this.styles[key]
+      ...style
     }
   }
 
