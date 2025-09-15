@@ -1,3 +1,6 @@
+# [1.0.22](https://github.com/mybricks/harmony-render-utils/compare/3a4439d..c310355) (2025-09-15)
+ - 兼容组件style为空的场景
+
 # [1.0.21](https://github.com/mybricks/harmony-render-utils/compare/b940e32..344b1f0) (2025-09-15)
  - 添加onComEvent，可由调用方自由配置组件事件行为
  - 支持ui组件调用「设置样式」
