@@ -23,5 +23,6 @@ export {
   createModifier,
   merge,
   createData,
-  MyBricksDescriptor
+  MyBricksDescriptor,
+  onComEvent
 } from "./mybricks";

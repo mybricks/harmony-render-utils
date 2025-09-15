@@ -1,3 +1,5 @@
+import { context } from "./context"
+
 const log = (...args) => {
   console.log("[MyBricks]", ...args)
 }
@@ -129,6 +131,21 @@ export const createInputsHandle = (params, init = false) => {
           return _comInfo
         } else if (key === "_context") {
           return _context
+        } else if (key === "_setStyle") {
+          return (value) => {
+            Object.entries(value).forEach(([selector, nextStyle]) => {
+              const { style } = _context.styles.getStyle(selector)
+              const updators = _context.styles.getUpdators(selector)
+
+              Object.entries(nextStyle).forEach(([key, value]) => {
+                style[key] = value
+              })
+
+              updators.forEach((updator) => {
+                updator(style)
+              })
+            })
+          }
         }
 
         return (value) => {
@@ -394,6 +411,16 @@ export const createEventsHandle = (params) => {
   if (!params.controller._context.outputs) {
     params.controller._context.outputs = new Proxy(params.events || {}, {
       get(target, key) {
+        const event = context.comEvent?.[params.uid]?.[key]
+        if (event) {
+          const { getVar } = params.controller._context
+          return (value) => {
+            event({
+              getVar
+            }, value)
+          }
+        }
+
         return target[key] || (() => {
         })
       }
@@ -585,10 +612,11 @@ export const createVariable = (initValue, callBack) => {
   value.next(initValue)
   const ref = {
     value,
-    valueChanges: new Set()
+    valueChanges: new Set(),
+    callBacksMap: new Map()
   }
 
-  return {
+  const variable = {
     /** 读取 */
     get(value) {
       const nextValue = new Subject()
@@ -669,8 +697,30 @@ export const createVariable = (initValue, callBack) => {
       }
 
       return result
+    },
+    bind(callBack) {
+      if (!ref.callBacksMap.has("")) {
+        ref.callBacksMap.set("", new Set())
+      }
+      const callBacks = ref.callBacksMap.get("")
+      callBacks.add(callBack)
+      // 默认触发一次
+      callBack(ref.value.value)
+    },
+    ext() {
+      return {
+        setValue(value) {
+          variable.set(value)
+        }
+      }
     }
   }
+
+  return new Proxy({}, {
+    get(_, key) {
+      return variable[key]
+    }
+  })
 }
 
 /** 创建变量map */
@@ -843,6 +893,33 @@ export const createModuleInputsHandle = () => {
   })
 }
 
+class Styles {
+  styles = {}
+  selectorToUpdatorsMap = new Map()
+
+  constructor(styles) {
+    this.styles = styles
+  }
+
+  getStyle(key) {
+    return {
+      style: this.styles[key],
+      setUpdator: (updator) => {
+        if (!this.selectorToUpdatorsMap.has(key)) {
+          this.selectorToUpdatorsMap.set(key, new Set())
+        }
+
+        this.selectorToUpdatorsMap.get(key).add(updator)
+      },
+      ...this.styles[key]
+    }
+  }
+
+  getUpdators(key) {
+    return this.selectorToUpdatorsMap.get(key)
+  }
+}
+
 /**
  * 组件样式
  */
@@ -851,13 +928,17 @@ export const createStyles = (params) => {
     const { styles, parentSlot } = params;
     if (parentSlot?.itemWrap) {
       const { root, ...other } = parentSlot
-      params.controller._context.styles = other
+      params.controller._context.styles = new Styles(other)
     } else {
-      params.controller._context.styles = styles;
+      params.controller._context.styles = new Styles(styles);
     }
   }
 
-  return params.controller._context.styles
+  return new Proxy({}, {
+    get(_, key) {
+      return params.controller._context.styles.getStyle(key)
+    }
+  })
 }
 
 /** [TODO] 记录API调用过程中变量的监听，调用回调后销毁 */
@@ -1002,7 +1083,7 @@ export const createData = (params, Data) => {
 }
 
 export function MyBricksDescriptor(params) {
-  const { navigation, provider } = params;
+  const { navigation, provider, vars } = params;
 
   return (target, key, descriptor) => {
     const originalMethod = descriptor.value
@@ -1023,10 +1104,28 @@ export function MyBricksDescriptor(params) {
         if (this.controller) {
           this[provider].controller = this.controller;
         }
+
+        const classProvider = this[provider]
+
+        Object.getOwnPropertyNames(classProvider).forEach((key) => {
+          const _context = classProvider[key]._context
+          if (_context) {
+            _context["this"] = this
+            _context['getVar'] = (varName) => {
+              const var0 = this[vars][varName]
+              return var0.ext()
+            }
+          }
+        })
+
       }
       const result = originalMethod.apply(this, args);
       return result
     }
     return descriptor
   }
+}
+
+export const onComEvent = (comEvent) => {
+  context.comEvent = comEvent
 }

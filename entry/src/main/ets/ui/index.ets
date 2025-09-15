@@ -1,7 +1,7 @@
 import { AttributeUpdater } from "@ohos.arkui.modifier"
 import type { MyBricks } from "../types";
 
-type Style = Record<string, string | number>;
+type Style = Record<string, string | number | Resource>;
 type Styles = Record<string, Style>;
 
 interface MyBricksComponentBuilderParams {
@@ -103,8 +103,38 @@ class CommonModifier extends AttributeUpdater<CommonAttribute> {
   }
 }
 
+
+interface MyBricksModifierStyle {
+  style: Style
+  setUpdator: MyBricks.Any
+}
+class MyBricksModifier<T> extends AttributeUpdater<T> {
+  private _style: MyBricksModifierStyle
+
+  constructor(style: MyBricks.Any) {
+    super()
+    this._style = style
+  }
+
+  initializeModifier(instance: T): void {
+    const style = this._style.style
+    this._style.setUpdator((style: Style) => {
+      this.updateNormalAttribute(instance, style)
+    })
+    if (style.bind) {
+      (style as MyBricks.Any).bind((style: MyBricks.Any) => {
+        this.updateNormalAttribute(instance, style)
+      })
+    } else {
+      this.updateNormalAttribute(instance, style)
+    }
+  }
+
+  updateNormalAttribute(instance: T, style: Style) {}
+}
+
 export {
-  MyBricksColumnModifier, ColumnVisibilityController, Slot, CommonModifier }
+  MyBricksColumnModifier, ColumnVisibilityController, Slot, CommonModifier, MyBricksModifier }
 
 export type {
   MyBricksComponentBuilderParams, Style, Styles
