@@ -105,32 +105,50 @@ class CommonModifier extends AttributeUpdater<CommonAttribute> {
 
 
 interface MyBricksModifierStyle {
+  selector: string
   style: Style
   setUpdator: MyBricks.Any
 }
-class MyBricksModifier<T> extends AttributeUpdater<T> {
-  private _style: MyBricksModifierStyle
 
-  constructor(style: MyBricks.Any) {
+class MyBricksModifier<T> extends AttributeUpdater<T> {
+  private _context: MyBricks.Any = {}
+
+  constructor(style: MyBricks.Any, uid?: string) {
     super()
-    this._style = style
+    this._context.style = style
+    this._context.selector = style.selector
+    this._context.selectors = new Set<string>(style.selector)
+    this._context.uid = uid || style.selector
   }
 
   initializeModifier(instance: T): void {
-    const style = this._style.style
-    this._style.setUpdator((style: Style) => {
-      this.updateNormalAttribute(instance, style)
-    })
-    if (style.bind) {
-      (style as MyBricks.Any).bind((style: MyBricks.Any) => {
-        this.updateNormalAttribute(instance, style)
-      })
-    } else {
+    // 注册更新事件
+    this._context.update = (style: Style) => {
       this.updateNormalAttribute(instance, style)
     }
+
+    this._context.style.setUpdator((selector: string, style: Style) => {
+      if (selector === this._context.selector) {
+        this.updateNormalAttribute(instance, style)
+      }
+    }, this._context.uid)
+    this.updateNormalAttribute(instance, this._context.style.style)
   }
 
-  updateNormalAttribute(instance: T, style: Style) {}
+  setStyle(style: MyBricks.Any) {
+    this._context.selector = style.selector
+
+    style.setUpdator((selector: string, style: Style) => {
+      if (selector === this._context.selector) {
+        this._context.update(style)
+      }
+    }, this._context.uid)
+
+    this._context.update(style.style)
+  }
+
+  updateNormalAttribute(instance: T, style: Style) {
+  }
 }
 
 export {

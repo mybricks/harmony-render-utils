@@ -141,9 +141,11 @@ export const createInputsHandle = (params, init = false) => {
                 style[key] = value
               })
 
-              updators.forEach((updator) => {
-                updator(style)
-              })
+              if (updators) {
+                updators.forEach((updator) => {
+                  updator(selector, style)
+                })
+              }
             })
           }
         }
@@ -895,33 +897,36 @@ export const createModuleInputsHandle = () => {
 
 class Styles {
   styles = {}
-  selectorToUpdatorsMap = new Map()
+  map = new Map()
 
   constructor(styles) {
     this.styles = styles
   }
 
-  getStyle(key) {
-    let style = this.styles[key]
+  getStyle(selector) {
+    let style = this.styles[selector]
     if (!style) {
-      this.styles[key] = {}
-      style = this.styles[key]
+      this.styles[selector] = {}
+      style = this.styles[selector]
     }
     return {
+      selector,
       style,
-      setUpdator: (updator) => {
-        if (!this.selectorToUpdatorsMap.has(key)) {
-          this.selectorToUpdatorsMap.set(key, new Set())
+      setUpdator: (updator, uid) => {
+        if (!this.map.has(selector)) {
+          this.map.set(selector, new Map())
         }
-
-        this.selectorToUpdatorsMap.get(key).add(updator)
+        const selectorMap = this.map.get(selector)
+        if (!selectorMap.has(uid)) {
+          selectorMap.set(uid, updator)
+        }
       },
       ...style
     }
   }
 
-  getUpdators(key) {
-    return this.selectorToUpdatorsMap.get(key)
+  getUpdators(selector) {
+    return this.map.get(selector)
   }
 }
 
@@ -940,6 +945,15 @@ export const createStyles = (params) => {
   }
 
   return new Proxy({}, {
+    ownKeys() {
+      return Object.keys(params.styles)
+    },
+    getOwnPropertyDescriptor(k) {
+      return {
+        enumerable: true,
+        configurable: true,
+      }
+    },
     get(_, key) {
       return params.controller._context.styles.getStyle(key)
     }
