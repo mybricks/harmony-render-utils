@@ -1,3 +1,6 @@
+# [1.0.23](https://github.com/mybricks/harmony-render-utils/compare/f805735..6d9f6bc) (2025-09-16)
+ - 兼容组件style为空的场景
+
 # [1.0.22](https://github.com/mybricks/harmony-render-utils/compare/3a4439d..c310355) (2025-09-15)
  - 兼容组件style为空的场景
 
