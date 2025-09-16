@@ -133,20 +133,32 @@ export const createInputsHandle = (params, init = false) => {
           return _context
         } else if (key === "_setStyle") {
           return (value) => {
-            Object.entries(value).forEach(([selector, nextStyle]) => {
-              const { style } = _context.styles.getStyle(selector)
-              const updators = _context.styles.getUpdators(selector)
+            const next = (value) => {
+              if (Object.prototype.toString.call(value) === "[object Object]") {
+                Object.entries(value).forEach(([selector, nextStyle]) => {
+                  const { style } = _context.styles.getStyle(selector)
+                  const updators = _context.styles.getUpdators(selector)
 
-              Object.entries(nextStyle).forEach(([key, value]) => {
-                style[key] = value
-              })
+                  Object.entries(nextStyle).forEach(([key, value]) => {
+                    style[key] = value
+                  })
 
-              if (updators) {
-                updators.forEach((updator) => {
-                  updator(selector, style)
+                  if (updators) {
+                    updators.forEach((updator) => {
+                      updator(selector, style)
+                    })
+                  }
                 })
               }
-            })
+            }
+
+            if (value?.subscribe) {
+              value.subscribe((value) => {
+                next(value)
+              })
+            } else {
+              next(value)
+            }
           }
         }
 
