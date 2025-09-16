@@ -132,7 +132,7 @@ export const createInputsHandle = (params, init = false) => {
         } else if (key === "_context") {
           return _context
         } else if (key === "_setStyle") {
-          return (value) => {
+          return (value0, value1) => {
             const next = (value) => {
               if (Object.prototype.toString.call(value) === "[object Object]") {
                 Object.entries(value).forEach(([selector, nextStyle]) => {
@@ -152,12 +152,26 @@ export const createInputsHandle = (params, init = false) => {
               }
             }
 
-            if (value?.subscribe) {
-              value.subscribe((value) => {
-                next(value)
-              })
+            if (typeof value0 === "string" && value1) {
+              if (value1?.subscribe) {
+                value1.subscribe((value) => {
+                  next({
+                    [value0]: value
+                  })
+                })
+              } else {
+                next({
+                  [value0]: value1
+                })
+              }
             } else {
-              next(value)
+              if (value0?.subscribe) {
+                value0.subscribe((value) => {
+                  next(value)
+                })
+              } else {
+                next(value0)
+              }
             }
           }
         }

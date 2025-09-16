@@ -14,7 +14,7 @@ export declare namespace MyBricks {
   type Events = Any
 
   /** 组件控制器 */
-  type Controller = Record<string, (value?: EventValue) => Record<string, Any>>
+  type Controller = Record<string, (...value: EventValue[]) => Record<string, Any>>
 
   /** 模块控制器 */
   interface ModuleController extends Record<string, (value: EventValue) => Record<string, Any>> {
