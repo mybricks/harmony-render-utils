@@ -1,3 +1,7 @@
+# [1.0.25](https://github.com/mybricks/harmony-render-utils/compare/fdb649f..848b443) (2025-09-16)
+ - 事件类型调整，不限制输入参数数量
+ - 设置样式兼容处理，支持调用组件的「配置」
+
 # [1.0.24](https://github.com/mybricks/harmony-render-utils/compare/6598728..7b36cb2) (2025-09-16)
  - 设置样式兼容处理
 
