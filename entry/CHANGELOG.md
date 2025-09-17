@@ -1,3 +1,7 @@
+# [1.0.26](https://github.com/mybricks/harmony-render-utils/compare/7a976a0..f7d4b8d) (2025-09-17)
+ - 支持ui组件配置默认隐藏
+ - 优化modifier实例收集逻辑
+
 # [1.0.25](https://github.com/mybricks/harmony-render-utils/compare/fdb649f..848b443) (2025-09-16)
  - 事件类型调整，不限制输入参数数量
  - 设置样式兼容处理，支持调用组件的「配置」
