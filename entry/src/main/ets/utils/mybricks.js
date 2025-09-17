@@ -118,7 +118,9 @@ export const createInputsHandle = (params, init = false) => {
     /** 组件基础信息 */
     const _comInfo = {}
     /** 全局 */
-    const _context = {}
+    const _context = {
+      initStyles: {}
+    }
 
     const proxy = new Proxy({}, {
       get(_, key) {
@@ -136,6 +138,18 @@ export const createInputsHandle = (params, init = false) => {
             const next = (value) => {
               if (Object.prototype.toString.call(value) === "[object Object]") {
                 Object.entries(value).forEach(([selector, nextStyle]) => {
+                  if (!_context.styles) {
+                    const { initStyles } = _context
+                    if (!initStyles[selector]) {
+                      initStyles[selector] = nextStyle
+                    } else {
+                      const initStyle = initStyles[selector]
+                      Object.entries(nextStyle).forEach(([key, value]) => {
+                        initStyle[key] = value
+                      })
+                    }
+                    return
+                  }
                   const { style } = _context.styles.getStyle(selector)
                   const updators = _context.styles.getUpdators(selector)
 
@@ -635,7 +649,7 @@ export const emit = (fn, value) => {
 }
 
 /** 创建变量 */
-export const createVariable = (initValue, callBack) => {
+export const createVariable = (initValue) => {
   const value = new Subject()
   value.next(initValue)
   const ref = {
@@ -666,7 +680,6 @@ export const createVariable = (initValue, callBack) => {
           valueChange(value)
         })
         nextValue.next(value)
-        callBack(value)
       }
       if (value?.subscribe) {
         value.subscribe((value) => {
@@ -686,7 +699,6 @@ export const createVariable = (initValue, callBack) => {
           valueChange(initValue)
         })
         nextValue.next(initValue)
-        callBack(initValue)
       }
       if (value?.subscribe) {
         value.subscribe(() => {
@@ -741,6 +753,12 @@ export const createVariable = (initValue, callBack) => {
           variable.set(value)
         }
       }
+    },
+    registerChange(change) {
+      ref.valueChanges.add(change)
+    },
+    unregisterChange(change) {
+      ref.valueChanges.delete(change)
     }
   }
 
@@ -959,12 +977,23 @@ class Styles {
  */
 export const createStyles = (params) => {
   if (!params.controller._context.styles) {
+    const initStyles = params.controller._context.initStyles
     const { styles, parentSlot } = params;
+    Object.entries(initStyles).forEach(([selector, initStyle]) => {
+      if (!styles[selector]) {
+        styles[selector] = initStyle
+      } else {
+        const style = styles[selector]
+        Object.entries(initStyle).forEach(([key, value]) => {
+          style[key] = value
+        })
+      }
+    })
     if (parentSlot?.itemWrap) {
-      const { root, ...other } = parentSlot
+      const { root, ...other } = styles
       params.controller._context.styles = new Styles(other)
     } else {
-      params.controller._context.styles = new Styles(styles);
+      params.controller._context.styles = new Styles(styles)
     }
   }
 
