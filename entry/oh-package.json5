@@ -1,6 +1,6 @@
 {
   "name": "@mybricks/render-utils",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "MyBricks.ai鸿蒙相关产物运行时需依赖的工具包",
   "main": "Index.ets",
   "author": "MyBricks.ai",

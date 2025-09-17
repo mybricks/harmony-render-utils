@@ -1,3 +1,7 @@
+# [1.0.27](https://github.com/mybricks/harmony-render-utils/compare/7c3202b..4ea648f) (2025-09-17)
+ - 支持变量监听
+ - 兼容_setStyle，组件未渲染的情况
+
 # [1.0.26](https://github.com/mybricks/harmony-render-utils/compare/7a976a0..f7d4b8d) (2025-09-17)
  - 支持ui组件配置默认隐藏
  - 优化modifier实例收集逻辑
