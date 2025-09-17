@@ -943,9 +943,7 @@ class Styles {
           this.map.set(selector, new Map())
         }
         const selectorMap = this.map.get(selector)
-        if (!selectorMap.has(uid)) {
-          selectorMap.set(uid, updator)
-        }
+        selectorMap.set(uid, updator)
       },
       ...style
     }
