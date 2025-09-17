@@ -213,11 +213,11 @@ export const createInputsHandle = (params, init = false) => {
     return proxy;
   } else {
     if (!params.controller._context.inputs) {
-      const { controller, title } = params
+      const { controller, title, styles } = params
       const { _inputEvents, _comInfo, _inputEventsTodo, _context } = controller
       _comInfo.title = title;
       _context.initModifier = {
-        visibility: Visibility.Visible
+        visibility: styles?.root?.display === "none" ? Visibility.None : Visibility.Visible
       }
 
       const createVisibilityHandler = (visibilityState) => {
