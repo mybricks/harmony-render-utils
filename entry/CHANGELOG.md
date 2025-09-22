@@ -1,3 +1,6 @@
+# [1.0.28](https://github.com/mybricks/harmony-render-utils/compare/df8dd6e..fe9ecb1) (2025-09-22)
+ - 支持读取流数据的任意层key
+
 # [1.0.27](https://github.com/mybricks/harmony-render-utils/compare/7c3202b..4ea648f) (2025-09-17)
  - 支持变量监听
  - 兼容_setStyle，组件未渲染的情况
