@@ -1,5 +1,10 @@
 import { context } from "./context"
 
+const SUBJECT_NEXT = Symbol("SUBJECT_NEXT")
+const SUBJECT_VALUE = Symbol("SUBJECT_VALUE")
+const SUBJECT_SUBSCRIBE = Symbol("SUBJECT_SUBSCRIBE")
+const SUBJECT_UNSUBSCRIBE = Symbol("SUBJECT_UNSUBSCRIBE")
+
 const log = (...args) => {
   console.log("[MyBricks]", ...args)
 }
@@ -23,27 +28,89 @@ export class Subject {
 
   constructor(params = {}) {
     this._log = params.log
+    return new Proxy(this, {
+      get(target, prop) {
+        if (prop in target) {
+          return target[prop];
+        }
+
+        const subjectNext = new SubjectNext(prop)
+
+        target[SUBJECT_SUBSCRIBE]((value) => {
+          subjectNext[SUBJECT_NEXT](value)
+        })
+
+        return subjectNext
+      }
+    })
   }
 
-  get value() {
+  get [SUBJECT_VALUE]() {
     return this._values[0]
   }
 
-  next(value) {
+  [SUBJECT_NEXT](value) {
     log(this._log, JSON.stringify(value))
     this._values[0] = value
     this._observers.forEach((observer) => observer(value))
   }
 
-  subscribe(observer) {
+  [SUBJECT_SUBSCRIBE](observer) {
     if (this._values.length) {
       observer(this._values[0])
     }
     this._observers.add(observer)
   }
 
-  unsubscribe(observer) {
+  [SUBJECT_UNSUBSCRIBE](observer) {
     this._observers.delete(observer)
+  }
+}
+
+function getValueNextByPath(params) {
+  const { value, path } = params
+  let current = value
+  for (const key of path) {
+    if (current === null || current === undefined) {
+      return undefined
+    }
+    current = current[key]
+  }
+  return current
+}
+
+class SubjectNext extends Subject {
+  _path = []
+
+  constructor(path) {
+    super()
+
+    this._path.push(path)
+
+    return new Proxy(this, {
+      get(target, prop) {
+        if (prop in target) {
+          return target[prop];
+        }
+
+        target._path.push(prop)
+
+        return target;
+      }
+    })
+  }
+
+  [SUBJECT_NEXT](value) {
+    this._values[0] = value
+    const nextValue = getValueNextByPath({ value, path: this._path })
+    this._observers.forEach((observer) => observer(nextValue))
+  }
+
+  [SUBJECT_SUBSCRIBE](observer) {
+    if (this._values.length) {
+      observer(getValueNextByPath({ value: this._values[0], path: this._path }))
+    }
+    this._observers.add(observer)
   }
 }
 
@@ -52,12 +119,12 @@ export const merge = (...subjects) => {
   const merge = new Subject()
 
   subjects.forEach((subject) => {
-    if (subject?.subscribe) {
-      subject.subscribe((value) => {
-        merge.next(value)
+    if (subject?.[SUBJECT_SUBSCRIBE]) {
+      subject[SUBJECT_SUBSCRIBE]((value) => {
+        merge[SUBJECT_NEXT](value)
       })
     } else {
-      merge.next(subject)
+      merge[SUBJECT_NEXT](subject)
     }
   })
 
@@ -75,13 +142,13 @@ export const validateJsMultipleInputs = (input) => {
 /** 组件的输入 */
 const createReactiveInputHandler = (params) => {
   const { input, value, rels, title } = params;
-  if (value?.subscribe) {
-    value.subscribe((value) => {
+  if (value?.[SUBJECT_SUBSCRIBE]) {
+    value[SUBJECT_SUBSCRIBE]((value) => {
       input(value, new Proxy({}, {
         get(_, key) {
           return (value) => {
             (rels[key] ||
-              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` }))).next(value)
+              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` })))[SUBJECT_NEXT](value)
           }
         }
       }))
@@ -92,7 +159,7 @@ const createReactiveInputHandler = (params) => {
         get(_, key) {
           return (value) => {
             (rels[key] ||
-              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` }))).next(value)
+              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` })))[SUBJECT_NEXT](value)
           }
         }
       }
@@ -167,8 +234,8 @@ export const createInputsHandle = (params, init = false) => {
             }
 
             if (typeof value0 === "string" && value1) {
-              if (value1?.subscribe) {
-                value1.subscribe((value) => {
+              if (value1?.[SUBJECT_SUBSCRIBE]) {
+                value1[SUBJECT_SUBSCRIBE]((value) => {
                   next({
                     [value0]: value
                   })
@@ -179,8 +246,8 @@ export const createInputsHandle = (params, init = false) => {
                 })
               }
             } else {
-              if (value0?.subscribe) {
-                value0.subscribe((value) => {
+              if (value0?.[SUBJECT_SUBSCRIBE]) {
+                value0[SUBJECT_SUBSCRIBE]((value) => {
                   next(value)
                 })
               } else {
@@ -243,8 +310,8 @@ export const createInputsHandle = (params, init = false) => {
               _context.modifier.attribute?.visibility(visibilityState)
             }
           }
-          if (value?.subscribe) {
-            value.subscribe(setVisibility);
+          if (value?.[SUBJECT_SUBSCRIBE]) {
+            value[SUBJECT_SUBSCRIBE](setVisibility);
           } else {
             setVisibility()
           }
@@ -262,8 +329,8 @@ export const createInputsHandle = (params, init = false) => {
             _context.modifier.attribute?.visibility(!!value ? Visibility.Visible : Visibility.None)
           }
         }
-        if (value?.subscribe) {
-          value.subscribe(setVisibility)
+        if (value?.[SUBJECT_SUBSCRIBE]) {
+          value[SUBJECT_SUBSCRIBE](setVisibility)
         } else {
           setVisibility(value)
         }
@@ -352,7 +419,7 @@ export const createJSHandle = (fn, options) => {
     get(_, key) {
       return (value) => {
         (rels[key] ||
-          (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}` }))).next(value)
+          (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}` })))[SUBJECT_NEXT](value)
       }
     }
   })
@@ -386,8 +453,8 @@ export const createJSHandle = (fn, options) => {
         const length = args.length;
         let valueAry = {};
         args.forEach((value, index) => {
-          if (value?.subscribe) {
-            value.subscribe((value) => {
+          if (value?.[SUBJECT_SUBSCRIBE]) {
+            value[SUBJECT_SUBSCRIBE]((value) => {
               log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[index]}`, JSON.stringify(value));
               valueAry[props.inputs[index]] = value
               if (Object.keys(valueAry).length === length) {
@@ -420,8 +487,8 @@ export const createJSHandle = (fn, options) => {
       } else {
         // 非多输入
         const value = args[0]
-        if (value?.subscribe) {
-          value.subscribe((value) => {
+        if (value?.[SUBJECT_SUBSCRIBE]) {
+          value[SUBJECT_SUBSCRIBE]((value) => {
             log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[0]}`, JSON.stringify(value));
             createReactiveInputHandler({
               input: controller,
@@ -480,8 +547,8 @@ export const createModuleEventsHandle = (events) => {
 
       if (event) {
         return (value) => {
-          if (value?.subscribe) {
-            value.subscribe((value) => {
+          if (value?.[SUBJECT_SUBSCRIBE]) {
+            value[SUBJECT_SUBSCRIBE]((value) => {
               events[key]?.(value)
             })
           } else {
@@ -518,7 +585,7 @@ export class Page {
   getParams(name) {
     const params = this.appRouter.getParams(name)
     const subject = new Subject()
-    subject.next(params?.value)
+    subject[SUBJECT_NEXT](params?.value)
     return subject
   }
 
@@ -526,8 +593,8 @@ export class Page {
   open(name, value) {
     const controller = pageController()
 
-    if (value?.subscribe) {
-      value.subscribe((value) => {
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
         this.appRouter.push(name, { value, controller })
       })
     } else {
@@ -541,8 +608,8 @@ export class Page {
   replace(name, value) {
     const controller = pageController()
 
-    if (value?.subscribe) {
-      value.subscribe((value) => {
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
         this.appRouter.replace(name, { value, controller })
       })
     } else {
@@ -557,13 +624,13 @@ export class Page {
     const params = this.appRouter.getParams(name)
 
     setTimeout(() => {
-      if (value?.subscribe) {
-        value.subscribe((value) => {
-          params.controller.commit.next(value)
+      if (value?.[SUBJECT_SUBSCRIBE]) {
+        value[SUBJECT_SUBSCRIBE]((value) => {
+          params.controller.commit[SUBJECT_NEXT](value)
           this.appRouter.pop()
         })
       } else {
-        params.controller.commit.next(value)
+        params.controller.commit[SUBJECT_NEXT](value)
         this.appRouter.pop()
       }
     }, 100)
@@ -574,12 +641,12 @@ export class Page {
     const params = this.appRouter.getParams(name)
     this.appRouter.pop()
     setTimeout(() => {
-      if (value?.subscribe) {
-        value.subscribe((value) => {
-          params.controller.cancel.next(value)
+      if (value?.[SUBJECT_SUBSCRIBE]) {
+        value[SUBJECT_SUBSCRIBE]((value) => {
+          params.controller.cancel[SUBJECT_NEXT](value)
         })
       } else {
-        params.controller.cancel.next(value)
+        params.controller.cancel[SUBJECT_NEXT](value)
       }
     }, 100)
   }
@@ -587,12 +654,12 @@ export class Page {
   /** 应用，不关闭 */
   apply(name, value) {
     const params = this.appRouter.getParams(name)
-    if (value?.subscribe) {
-      value.subscribe((value) => {
-        params.controller.apply.next(value)
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
+        params.controller.apply[SUBJECT_NEXT](value)
       })
     } else {
-      params.controller.apply.next(value)
+      params.controller.apply[SUBJECT_NEXT](value)
     }
   }
 
@@ -600,13 +667,13 @@ export class Page {
   close(name, value) {
     const params = this.appRouter.getParams(name)
     setTimeout(() => {
-      if (value?.subscribe) {
-        value.subscribe((value) => {
-          params.controller.close.next(value)
+      if (value?.[SUBJECT_SUBSCRIBE]) {
+        value[SUBJECT_SUBSCRIBE]((value) => {
+          params.controller.close[SUBJECT_NEXT](value)
           this.appRouter.pop()
         })
       } else {
-        params.controller.close.next(value)
+        params.controller.close[SUBJECT_NEXT](value)
         this.appRouter.pop()
       }
     }, 100)
@@ -621,16 +688,16 @@ export const emit = (fn, value) => {
     return subject
   }
 
-  if (value?.subscribe) {
-    value.subscribe((value) => {
+  if (value?.[SUBJECT_SUBSCRIBE]) {
+    value[SUBJECT_SUBSCRIBE]((value) => {
       const res = fn(value)
 
       if (res instanceof Promise) {
         res.then((value) => {
-          subject.next(value)
+          subject[SUBJECT_NEXT](value)
         })
       } else {
-        subject.next(res)
+        subject[SUBJECT_NEXT](res)
       }
     })
   } else {
@@ -638,10 +705,10 @@ export const emit = (fn, value) => {
 
     if (res instanceof Promise) {
       res.then((value) => {
-        subject.next(value)
+        subject[SUBJECT_NEXT](value)
       })
     } else {
-      subject.next(res)
+      subject[SUBJECT_NEXT](res)
     }
   }
 
@@ -651,7 +718,7 @@ export const emit = (fn, value) => {
 /** 创建变量 */
 export const createVariable = (initValue) => {
   const value = new Subject()
-  value.next(initValue)
+  value[SUBJECT_NEXT](initValue)
   const ref = {
     value,
     valueChanges: new Set(),
@@ -662,12 +729,12 @@ export const createVariable = (initValue) => {
     /** 读取 */
     get(value) {
       const nextValue = new Subject()
-      if (value?.subscribe) {
-        value.subscribe(() => {
-          nextValue.next(ref.value.value)
+      if (value?.[SUBJECT_SUBSCRIBE]) {
+        value[SUBJECT_SUBSCRIBE](() => {
+          nextValue[SUBJECT_NEXT](ref.value[SUBJECT_VALUE])
         })
       } else {
-        nextValue.next(ref.value.value)
+        nextValue[SUBJECT_NEXT](ref.value[SUBJECT_VALUE])
       }
       return nextValue
     },
@@ -675,14 +742,14 @@ export const createVariable = (initValue) => {
     set(value) {
       const nextValue = new Subject()
       const next = (value) => {
-        ref.value.next(value)
+        ref.value[SUBJECT_NEXT](value)
         ref.valueChanges.forEach((valueChange) => {
           valueChange(value)
         })
-        nextValue.next(value)
+        nextValue[SUBJECT_NEXT](value)
       }
-      if (value?.subscribe) {
-        value.subscribe((value) => {
+      if (value?.[SUBJECT_SUBSCRIBE]) {
+        value[SUBJECT_SUBSCRIBE]((value) => {
           next(value)
         })
       } else {
@@ -694,14 +761,14 @@ export const createVariable = (initValue) => {
     reset(value) {
       const nextValue = new Subject()
       const next = () => {
-        ref.value.next(initValue)
+        ref.value[SUBJECT_NEXT](initValue)
         ref.valueChanges.forEach((valueChange) => {
           valueChange(initValue)
         })
-        nextValue.next(initValue)
+        nextValue[SUBJECT_NEXT](initValue)
       }
-      if (value?.subscribe) {
-        value.subscribe(() => {
+      if (value?.[SUBJECT_SUBSCRIBE]) {
+        value[SUBJECT_SUBSCRIBE](() => {
           next()
         })
       } else {
@@ -714,7 +781,7 @@ export const createVariable = (initValue) => {
       const subject = new Subject();
 
       const change = (value) => {
-        subject.next(value)
+        subject[SUBJECT_NEXT](value)
       }
 
       ref.valueChanges.add(change);
@@ -724,7 +791,7 @@ export const createVariable = (initValue) => {
           ref.valueChanges.delete(change)
         },
         subscribe(next) {
-          subject.subscribe(next)
+          subject[SUBJECT_SUBSCRIBE](next)
         }
       }
 
@@ -745,7 +812,7 @@ export const createVariable = (initValue) => {
       const callBacks = ref.callBacksMap.get("")
       callBacks.add(callBack)
       // 默认触发一次
-      callBack(ref.value.value)
+      callBack(ref.value[SUBJECT_VALUE])
     },
     ext() {
       return {
@@ -775,7 +842,7 @@ export const createVars = (vars) => {
     get(target, key) {
       const value = target[key]
       if (value) {
-        return value.get().value
+        return value.get()[SUBJECT_VALUE]
       }
       return value
     }
@@ -800,19 +867,19 @@ export const createFx = (fx) => {
           if (!outputs[key]) {
             outputs[key] = new Subject()
           }
-          if (value?.subscribe) {
-            value.subscribe((value) => {
-              outputs[key].next(value)
+          if (value?.[SUBJECT_SUBSCRIBE]) {
+            value[SUBJECT_SUBSCRIBE]((value) => {
+              outputs[key][SUBJECT_NEXT](value)
             })
           } else {
-            outputs[key].next(value)
+            outputs[key][SUBJECT_NEXT](value)
           }
         })
       }
     }
 
-    if (value?.subscribe) {
-      value.subscribe((value) => {
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
         next(value)
       })
     } else {
@@ -839,11 +906,11 @@ export const createSlotsIO = (params) => {
                 }
 
                 const next = (value) => {
-                  inputsMap[key].next(value)
+                  inputsMap[key][SUBJECT_NEXT](value)
                 }
 
-                next.subscribe = (next) => {
-                  inputsMap[key].subscribe(next)
+                next[SUBJECT_SUBSCRIBE] = (next) => {
+                  inputsMap[key][SUBJECT_SUBSCRIBE](next)
                 }
 
                 return next
@@ -853,8 +920,8 @@ export const createSlotsIO = (params) => {
               get(_, key) {
                 return (next) => {
                   return (value) => {
-                    if (value?.subscribe) {
-                      value.subscribe((value) => {
+                    if (value?.[SUBJECT_SUBSCRIBE]) {
+                      value[SUBJECT_SUBSCRIBE]((value) => {
                         next(value)
                       })
                     } else {
@@ -892,12 +959,12 @@ export const createModuleInputsHandle = () => {
               outputsMap[key] = new Subject()
             }
             return (value) => {
-              if (value?.subscribe) {
-                value.subscribe((value) => {
-                  outputsMap[key].next(value)
+              if (value?.[SUBJECT_SUBSCRIBE]) {
+                value[SUBJECT_SUBSCRIBE]((value) => {
+                  outputsMap[key][SUBJECT_NEXT](value)
                 });
               } else {
-                outputsMap[key].next(value)
+                outputsMap[key][SUBJECT_NEXT](value)
               }
             }
           }
@@ -909,12 +976,12 @@ export const createModuleInputsHandle = () => {
       }
 
       const next = (value) => {
-        if (value?.subscribe) {
-          value.subscribe((value) => {
-            inputsMap[key].next(value)
+        if (value?.[SUBJECT_SUBSCRIBE]) {
+          value[SUBJECT_SUBSCRIBE]((value) => {
+            inputsMap[key][SUBJECT_NEXT](value)
           });
         } else {
-          inputsMap[key].next(value)
+          inputsMap[key][SUBJECT_NEXT](value)
         }
 
         return new Proxy({}, {
@@ -926,12 +993,12 @@ export const createModuleInputsHandle = () => {
 
       return new Proxy(next, {
         get(_, proxyKey) {
-          if (proxyKey === "subscribe") {
+          if (proxyKey === "subscribe" || proxyKey === SUBJECT_SUBSCRIBE) {
             return (next) => {
-              inputsMap[key].subscribe(next)
+              inputsMap[key][SUBJECT_SUBSCRIBE](next)
             }
-          } else if (proxyKey === "value") {
-            return inputsMap[key].value
+          } else if (proxyKey === "value" || proxyKey === SUBJECT_VALUE) {
+            return inputsMap[key][SUBJECT_VALUE]
           }
         }
       })
@@ -1045,13 +1112,13 @@ export const transformApi = (api) => {
         if (!outputs[key]) {
           outputs[key] = new Subject()
         }
-        if (value?.subscribe) {
-          value.subscribe((value) => {
+        if (value?.[SUBJECT_SUBSCRIBE]) {
+          value[SUBJECT_SUBSCRIBE]((value) => {
             if (isDispose) {
               return
             }
             isDispose = true
-            outputs[key].next(value)
+            outputs[key][SUBJECT_NEXT](value)
             cb?.[key]?.(value)
             apiRunVariablesSubject[id]?.forEach((subject) => {
               subject.destroy()
@@ -1062,7 +1129,7 @@ export const transformApi = (api) => {
             return
           }
           isDispose = true
-          outputs[key].next(value)
+          outputs[key][SUBJECT_NEXT](value)
           cb?.[key]?.(value)
           apiRunVariablesSubject[id]?.forEach((subject) => {
             subject.destroy()
@@ -1085,13 +1152,13 @@ export const transformBus = (bus) => {
           get(_, key) {
             return (value) => {
               const output = outputs[key] || (outputs[key] = new Subject())
-              output.next(value)
+              output[SUBJECT_NEXT](value)
             }
           }
         })
 
-        if (value?.subscribe) {
-          value.subscribe((value) => {
+        if (value?.[SUBJECT_SUBSCRIBE]) {
+          value[SUBJECT_SUBSCRIBE]((value) => {
             newBus(value, callBack)
           })
         } else {
@@ -1121,15 +1188,15 @@ export const createBus = (bus) => {
 export const join = (lastSubject, nextSubject) => {
   const subject = new Subject();
   const next = () => {
-    if (nextSubject?.subscribe) {
-      subject.next(nextSubject.value);
+    if (nextSubject?.[SUBJECT_SUBSCRIBE]) {
+      subject[SUBJECT_NEXT](nextSubject[SUBJECT_VALUE]);
     } else {
-      subject.next(nextSubject);
+      subject[SUBJECT_NEXT](nextSubject);
     }
   }
 
-  if (lastSubject?.subscribe) {
-    lastSubject.subscribe(() => {
+  if (lastSubject?.[SUBJECT_SUBSCRIBE]) {
+    lastSubject[SUBJECT_SUBSCRIBE](() => {
       next()
     });
   } else {
