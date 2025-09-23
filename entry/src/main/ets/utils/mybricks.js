@@ -765,7 +765,9 @@ export const emit = (fn, value) => {
 }
 
 /** 创建变量 */
-export const createVariable = (initValue) => {
+export const createVariable = (...args) => {
+  const execOnceOnReg = args.length > 0
+  const initValue = args[0]
   const value = new Subject()
   value[SUBJECT_NEXT](initValue)
   const ref = {
@@ -872,6 +874,9 @@ export const createVariable = (initValue) => {
     },
     registerChange(change) {
       ref.valueChanges.add(change)
+      if (execOnceOnReg) {
+        change(ref.value[SUBJECT_VALUE])
+      }
     },
     unregisterChange(change) {
       ref.valueChanges.delete(change)
