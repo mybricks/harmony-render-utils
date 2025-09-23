@@ -175,6 +175,25 @@ const createReactiveInputHandler = (params) => {
   )
 }
 
+const safeSetByPath = (params) => {
+  const { data, path, value } = params;
+  const nextIndex = path.length - 1;
+  let current = data;
+  let errorFlag = false;
+  for (let i = 0; i < nextIndex; i++) {
+    try {
+      current = current[path[i]];
+    } catch (error) {
+      errorFlag = true;
+      break;
+    }
+  }
+
+  if (!errorFlag) {
+    current[path[nextIndex]] = value;
+  }
+}
+
 // UI
 export const createInputsHandle = (params, init = false) => {
   if (init) {
@@ -186,7 +205,8 @@ export const createInputsHandle = (params, init = false) => {
     const _comInfo = {}
     /** 全局 */
     const _context = {
-      initStyles: {}
+      initStyles: {},
+      initData: {},
     }
 
     const proxy = new Proxy({}, {
@@ -252,6 +272,35 @@ export const createInputsHandle = (params, init = false) => {
                 })
               } else {
                 next(value0)
+              }
+            }
+          }
+        } else if (key === "_setData") {
+          return (...args) => {
+            if (args.length === 2) {
+              const [path, value] = args
+
+              const next = (params) => {
+                const { path, value } = params
+                if (!_context.data) {
+                  const { initData } = _context
+                  initData[path] = value
+                  return
+                }
+
+                safeSetByPath({
+                  data: _context.data,
+                  path: path.split("."),
+                  value
+                })
+              }
+
+              if (value?.[SUBJECT_SUBSCRIBE]) {
+                value0[SUBJECT_SUBSCRIBE]((value) => {
+                  next({ value, path })
+                })
+              } else {
+                next({ value, path })
               }
             }
           }
@@ -1215,7 +1264,16 @@ export const createModifier = (params, Modifier) => {
 
 export const createData = (params, Data) => {
   if (!params.controller._context.data) {
-    params.controller._context.data = new Data(params.data)
+    const { initData } = params.controller._context
+    const nextData = Object.assign({}, params.data)
+    Object.entries(initData).forEach(([path, value]) => {
+      safeSetByPath({
+        data: nextData,
+        path: path.split("."),
+        value
+      })
+    })
+    params.controller._context.data = new Data(nextData)
   }
 
   return params.controller._context.data
