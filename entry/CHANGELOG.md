@@ -1,3 +1,8 @@
+# [1.0.29](https://github.com/mybricks/harmony-render-utils/compare/0919ab6..c860ca3) (2025-09-24)
+ - 支持注册组件时候，读写变量、读输入、调用各类输出
+ - 变量有默认值时，注册自动执行一次
+ - 支持_setData修改组件数据源
+
 # [1.0.28](https://github.com/mybricks/harmony-render-utils/compare/df8dd6e..fe9ecb1) (2025-09-22)
  - 支持读取流数据的任意层key
 
