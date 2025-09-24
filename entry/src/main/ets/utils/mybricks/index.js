@@ -1,19 +1,13 @@
 import { context } from "./context"
-
-const SUBJECT_NEXT = Symbol("SUBJECT_NEXT")
-const SUBJECT_VALUE = Symbol("SUBJECT_VALUE")
-const SUBJECT_SUBSCRIBE = Symbol("SUBJECT_SUBSCRIBE")
-const SUBJECT_UNSUBSCRIBE = Symbol("SUBJECT_UNSUBSCRIBE")
-
-const log = (...args) => {
-  console.log("[MyBricks]", ...args)
-}
-
-const logger = {
-  info: log,
-  warn: log,
-  error: log,
-}
+import {
+  SUBJECT_NEXT,
+  SUBJECT_VALUE,
+  SUBJECT_SUBSCRIBE,
+  SUBJECT_UNSUBSCRIBE,
+  VARS_MARK,
+  BASECONTROLLER_MARK,
+} from "./constant"
+import { log, logger } from "./log"
 
 const EXE_TITLE_MAP = {
   output: "输出",
@@ -571,11 +565,13 @@ export const createEventsHandle = (params) => {
       get(target, key) {
         const event = context.comEvent?.[params.uid]?.[key]
         if (event) {
-          const { getVar } = params.controller._context
+          const { getVar, getOutput, getInput } = params.controller._context
           return (value) => {
-            event({
-              getVar
-            }, value)
+            event(value, {
+              getVar,
+              getOutput,
+              getInput
+            })
           }
         }
 
@@ -586,27 +582,6 @@ export const createEventsHandle = (params) => {
   }
 
   return params.controller._context.outputs
-}
-
-// 区块事件
-export const createModuleEventsHandle = (events) => {
-  return new Proxy(events, {
-    get(_, key) {
-      const event = events[key];
-
-      if (event) {
-        return (value) => {
-          if (value?.[SUBJECT_SUBSCRIBE]) {
-            value[SUBJECT_SUBSCRIBE]((value) => {
-              events[key]?.(value)
-            })
-          } else {
-            events[key]?.(value)
-          }
-        }
-      }
-    }
-  })
 }
 
 // 场景打开、输出
@@ -628,6 +603,7 @@ export class Page {
 
   constructor(appRouter) {
     this.appRouter = appRouter
+    context.page = this
   }
 
   /** 获取当前页面入参 */
@@ -672,32 +648,28 @@ export class Page {
   commit(name, value) {
     const params = this.appRouter.getParams(name)
 
-    setTimeout(() => {
-      if (value?.[SUBJECT_SUBSCRIBE]) {
-        value[SUBJECT_SUBSCRIBE]((value) => {
-          params.controller.commit[SUBJECT_NEXT](value)
-          this.appRouter.pop()
-        })
-      } else {
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
         params.controller.commit[SUBJECT_NEXT](value)
         this.appRouter.pop()
-      }
-    }, 100)
+      })
+    } else {
+      params.controller.commit[SUBJECT_NEXT](value)
+      this.appRouter.pop()
+    }
   }
 
   /** 取消 */
   cancel(name, value) {
     const params = this.appRouter.getParams(name)
     this.appRouter.pop()
-    setTimeout(() => {
-      if (value?.[SUBJECT_SUBSCRIBE]) {
-        value[SUBJECT_SUBSCRIBE]((value) => {
-          params.controller.cancel[SUBJECT_NEXT](value)
-        })
-      } else {
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
         params.controller.cancel[SUBJECT_NEXT](value)
-      }
-    }, 100)
+      })
+    } else {
+      params.controller.cancel[SUBJECT_NEXT](value)
+    }
   }
 
   /** 应用，不关闭 */
@@ -715,17 +687,15 @@ export class Page {
   /** 关闭 */
   close(name, value) {
     const params = this.appRouter.getParams(name)
-    setTimeout(() => {
-      if (value?.[SUBJECT_SUBSCRIBE]) {
-        value[SUBJECT_SUBSCRIBE]((value) => {
-          params.controller.close[SUBJECT_NEXT](value)
-          this.appRouter.pop()
-        })
-      } else {
+    if (value?.[SUBJECT_SUBSCRIBE]) {
+      value[SUBJECT_SUBSCRIBE]((value) => {
         params.controller.close[SUBJECT_NEXT](value)
         this.appRouter.pop()
-      }
-    }, 100)
+      })
+    } else {
+      params.controller.close[SUBJECT_NEXT](value)
+      this.appRouter.pop()
+    }
   }
 }
 
@@ -869,6 +839,9 @@ export const createVariable = (...args) => {
       return {
         setValue(value) {
           variable.set(value)
+        },
+        getValue() {
+          return ref.value[SUBJECT_VALUE]
         }
       }
     },
@@ -1284,50 +1257,18 @@ export const createData = (params, Data) => {
   return params.controller._context.data
 }
 
-export function MyBricksDescriptor(params) {
-  const { navigation, provider, vars } = params;
-
-  return (target, key, descriptor) => {
-    const originalMethod = descriptor.value
-    descriptor.value = function (...args) {
-      if (this.navigation?.navPathStack) {
-        navigation.registConfig({
-          navPathStack: this.navigation.navPathStack,
-          entryRouter: this.navigation?.entryRouter
-        })
-      }
-      if (this[provider]) {
-        if (this.events) {
-          this[provider].events = createModuleEventsHandle(this.events);
-        }
-        if (this.data) {
-          this[provider].data = this.data;
-        }
-        if (this.controller) {
-          this[provider].controller = this.controller;
-        }
-
-        const classProvider = this[provider]
-
-        Object.getOwnPropertyNames(classProvider).forEach((key) => {
-          const _context = classProvider[key]._context
-          if (_context) {
-            _context["this"] = this
-            _context['getVar'] = (varName) => {
-              const var0 = this[vars][varName]
-              return var0.ext()
-            }
-          }
-        })
-
-      }
-      const result = originalMethod.apply(this, args);
-      return result
-    }
-    return descriptor
-  }
-}
-
 export const onComEvent = (comEvent) => {
   context.comEvent = comEvent
 }
+
+export class Vars {
+  [VARS_MARK] = true
+}
+
+export class BaseController {
+  [BASECONTROLLER_MARK] = true
+}
+
+export { context }
+export * from "./MyBricksDescriptor"
+export * from "./createModuleEventsHandle"
