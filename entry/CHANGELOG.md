@@ -1,3 +1,6 @@
+# [1.0.30](https://github.com/mybricks/harmony-render-utils/compare/341777b..7c601ae) (2025-09-25)
+ - 支持在组件事件内读写全局变量
+
 # [1.0.29](https://github.com/mybricks/harmony-render-utils/compare/0919ab6..c860ca3) (2025-09-24)
  - 支持注册组件时候，读写变量、读输入、调用各类输出
  - 变量有默认值时，注册自动执行一次
