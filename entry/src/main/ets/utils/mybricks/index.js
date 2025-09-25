@@ -1265,6 +1265,12 @@ export class Vars {
   [VARS_MARK] = true
 }
 
+export class BaseGlobalVars {
+  constructor() {
+    context.globalVars = this
+  }
+}
+
 export class BaseController {
   [BASECONTROLLER_MARK] = true
 }

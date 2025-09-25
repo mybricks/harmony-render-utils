@@ -25,6 +25,12 @@ const getVar = ({ that, varName }) => {
 
   if (["page", "popup", "module"].includes(params.type)) {
     // 模块、页面、弹窗是最上层，不再继续向上查
+    const var0 = context.globalVars?.[varName]
+
+    if (var0) {
+      return var0.ext()
+    }
+
     return DEFAULT_GETVAR_RESULT
   }
   return getVar({ that: parent, varName })
