@@ -1,3 +1,6 @@
+# [1.0.31](https://github.com/mybricks/harmony-render-utils/compare/398106a..689e6ab) (2025-09-29)
+ - 去除全局context，区分模块作用域
+
 # [1.0.30](https://github.com/mybricks/harmony-render-utils/compare/341777b..7c601ae) (2025-09-25)
  - 支持在组件事件内读写全局变量
 
