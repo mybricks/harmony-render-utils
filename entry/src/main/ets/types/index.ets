@@ -61,7 +61,7 @@ export declare namespace MyBricks {
     data: JSData
   }
 
-  type Codes = Record<string, (params: CodeParams) => (...values: MyBricks.EventValue[]) => Record<string, MyBricks.EventValue>>
+  type Codes = Record<string, (params: CodeParams, appContext: AppContext) => (...values: MyBricks.EventValue[]) => Record<string, MyBricks.EventValue>>
 
   interface _EnvCurrentScenes {
     close: () => void;
@@ -72,9 +72,17 @@ export declare namespace MyBricks {
     currentScenes: _EnvCurrentScenes
   }
 
-  interface  Env {
+  interface Env {
     callConnector: Any,
     appRouter: Any,
+    globalVars: Any
+  }
+
+  interface AppContext {
+    env: Env
+    _env: _Env
+    page: Any
+    comEvent: Any
     globalVars: Any
   }
 

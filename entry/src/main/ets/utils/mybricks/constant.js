@@ -5,3 +5,7 @@ export const SUBJECT_UNSUBSCRIBE = Symbol("SUBJECT_UNSUBSCRIBE")
 export const VARS_MARK = Symbol("VARS_MARK")
 export const BASECONTROLLER_MARK = Symbol("BASECONTROLLER_MARK")
 export const MYBRICKS_DESCRIPTOR = Symbol("MYBRICKS_DESCRIPTOR")
+export const EXE_TITLE_MAP = {
+  output: "输出",
+  input: "输入"
+}

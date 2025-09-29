@@ -1,7 +1,6 @@
 import { VARS_MARK, SUBJECT_VALUE, BASECONTROLLER_MARK, MYBRICKS_DESCRIPTOR } from "./constant"
 import { createModuleEventsHandle } from "./createModuleEventsHandle"
 import { log } from "./log"
-import { context } from "./context"
 
 const DEFAULT_GETVAR_RESULT = {
   setValue(value) {
@@ -25,7 +24,7 @@ const getVar = ({ that, varName }) => {
 
   if (["page", "popup", "module"].includes(params.type)) {
     // 模块、页面、弹窗是最上层，不再继续向上查
-    const var0 = context.globalVars?.[varName]
+    const var0 = params.appContext?.globalVars?.[varName]
 
     if (var0) {
       return var0.ext()
@@ -63,7 +62,7 @@ const getOutput = ({ that, outputName }) => {
     if (["commit", "apply", "cancel", "close"].includes(outputKey)) {
       return {
         setValue(value) {
-          context.page[outputKey](pageId, value)
+          params.appContext?.page?.[outputKey](pageId, value)
         },
       }
     }
@@ -112,7 +111,7 @@ const getInput = ({ that, inputName }) => {
     if (inputKey === "open") {
       return {
         getValue() {
-          return context.page.getParams(pageId)?.[SUBJECT_VALUE]
+          return params.appContext?.page?.getParams(pageId)?.[SUBJECT_VALUE]
         }
       }
     }
@@ -170,7 +169,7 @@ export function MyBricksDescriptor(params) {
 
       if (controller) {
         if (this.events) {
-          controller.events = createModuleEventsHandle({ that: this });
+          controller.events = createModuleEventsHandle({ that: this, appContext: params.appContext });
         }
         if (this.data) {
           controller.data = this.data;
@@ -194,6 +193,7 @@ export function MyBricksDescriptor(params) {
             _context['getInput'] = (inputName) => {
               return getInput({ that: this, inputName })
             }
+            _context['appContext'] = params.appContext
           }
         })
       }

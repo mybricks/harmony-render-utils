@@ -1,7 +1,6 @@
 export { genCallConnector } from "./CallConnector";
 
 export {
-  context,
   createJSHandle,
   createInputsHandle,
   createEventsHandle,
@@ -23,8 +22,8 @@ export {
   merge,
   createData,
   MyBricksDescriptor,
-  onComEvent,
   Vars,
   BaseController,
-  BaseGlobalVars
+  createEnv,
+  _createEnv
 } from "./mybricks";

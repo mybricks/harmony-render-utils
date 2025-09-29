@@ -1,112 +1,14 @@
-import { context } from "./context"
 import {
   SUBJECT_NEXT,
   SUBJECT_VALUE,
   SUBJECT_SUBSCRIBE,
-  SUBJECT_UNSUBSCRIBE,
   VARS_MARK,
   BASECONTROLLER_MARK,
+  EXE_TITLE_MAP
 } from "./constant"
-import { log, logger } from "./log"
-
-const EXE_TITLE_MAP = {
-  output: "输出",
-  input: "输入"
-}
-
-/** 数据流 */
-export class Subject {
-  _values = []
-  _observers = new Set()
-  _log = undefined
-
-  constructor(params = {}) {
-    this._log = params.log
-    return new Proxy(this, {
-      get(target, prop) {
-        if (prop in target) {
-          return target[prop];
-        }
-
-        const subjectNext = new SubjectNext(prop)
-
-        target[SUBJECT_SUBSCRIBE]((value) => {
-          subjectNext[SUBJECT_NEXT](value)
-        })
-
-        return subjectNext
-      }
-    })
-  }
-
-  get [SUBJECT_VALUE]() {
-    return this._values[0]
-  }
-
-  [SUBJECT_NEXT](value) {
-    log(this._log, JSON.stringify(value))
-    this._values[0] = value
-    this._observers.forEach((observer) => observer(value))
-  }
-
-  [SUBJECT_SUBSCRIBE](observer) {
-    if (this._values.length) {
-      observer(this._values[0])
-    }
-    this._observers.add(observer)
-  }
-
-  [SUBJECT_UNSUBSCRIBE](observer) {
-    this._observers.delete(observer)
-  }
-}
-
-function getValueNextByPath(params) {
-  const { value, path } = params
-  let current = value
-  for (const key of path) {
-    if (current === null || current === undefined) {
-      return undefined
-    }
-    current = current[key]
-  }
-  return current
-}
-
-class SubjectNext extends Subject {
-  _path = []
-
-  constructor(path) {
-    super()
-
-    this._path.push(path)
-
-    return new Proxy(this, {
-      get(target, prop) {
-        if (prop in target) {
-          return target[prop];
-        }
-
-        target._path.push(prop)
-
-        return target;
-      }
-    })
-  }
-
-  [SUBJECT_NEXT](value) {
-    this._values[0] = value
-    const nextValue = getValueNextByPath({ value, path: this._path })
-    this._observers.forEach((observer) => observer(nextValue))
-  }
-
-  [SUBJECT_SUBSCRIBE](observer) {
-    if (this._values.length) {
-      observer(getValueNextByPath({ value: this._values[0], path: this._path }))
-    }
-    this._observers.add(observer)
-  }
-}
+import { log } from "./log"
+import { Subject } from "./Subject"
+import { createReactiveInputHandler } from "./createReactiveInputHandler"
 
 /** 合并数据流 */
 export const merge = (...subjects) => {
@@ -125,49 +27,7 @@ export const merge = (...subjects) => {
   return merge
 }
 
-/** utils */
-/**
- * 判断是否js多输入
- */
-export const validateJsMultipleInputs = (input) => {
-  return input.match(/\./); // input.xxx 为多输入模式
-}
 
-/** 组件的输入 */
-const createReactiveInputHandler = (params) => {
-  const { input, value, rels, title } = params;
-  if (value?.[SUBJECT_SUBSCRIBE]) {
-    value[SUBJECT_SUBSCRIBE]((value) => {
-      input(value, new Proxy({}, {
-        get(_, key) {
-          return (value) => {
-            (rels[key] ||
-              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` })))[SUBJECT_NEXT](value)
-          }
-        }
-      }))
-    })
-  } else {
-    input(value, new Proxy({},
-      {
-        get(_, key) {
-          return (value) => {
-            (rels[key] ||
-              (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` })))[SUBJECT_NEXT](value)
-          }
-        }
-      }
-    ))
-  }
-
-  return new Proxy({},
-    {
-      get(_, key) {
-        return rels[key] || (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${title} | ${key}` }))
-      }
-    }
-  )
-}
 
 const safeSetByPath = (params) => {
   const { data, path, value } = params;
@@ -423,147 +283,12 @@ export const createInputsHandle = (params, init = false) => {
   }
 }
 
-// JS
-export const createJSHandle = (fn, options) => {
-  let controller
-
-  const { props, env } = options
-
-  const inputs = new Proxy({}, {
-    getOwnPropertyDescriptor() {
-      return {
-        enumerable: true,
-        configurable: true,
-      }
-    },
-    ownKeys() {
-      return props.inputs
-    },
-    get() {
-      return (input) => {
-        // 约定只有一个输入
-        controller = input
-      }
-    }
-  })
-
-  const rels = {}
-
-  const outputs = new Proxy({}, {
-    getOwnPropertyDescriptor() {
-      return {
-        enumerable: true,
-        configurable: true,
-      }
-    },
-    ownKeys() {
-      return props.outputs
-    },
-    get(_, key) {
-      return (value) => {
-        (rels[key] ||
-          (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}` })))[SUBJECT_NEXT](value)
-      }
-    }
-  })
-
-  fn({
-    data: props.data,
-    inputs,
-    outputs,
-    logger,
-    env
-  })
-
-  const isJsMultipleInputs = props.inputs[0]
-    ? validateJsMultipleInputs(props.inputs[0])
-    : false;
-
-  const exeOutputs = new Proxy(
-    {},
-    {
-      get(_, key) {
-        return rels[key] || (rels[key] = new Subject({ log: `${EXE_TITLE_MAP["output"]} ${props.title} | ${key}` }))
-      },
-    },
-  )
-
-  const exe = (...args) => {
-    if (args.length) {
-      // 调用输入
-      if (isJsMultipleInputs) {
-        // 多输入模式
-        const length = args.length;
-        let valueAry = {};
-        args.forEach((value, index) => {
-          if (value?.[SUBJECT_SUBSCRIBE]) {
-            value[SUBJECT_SUBSCRIBE]((value) => {
-              log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[index]}`, JSON.stringify(value));
-              valueAry[props.inputs[index]] = value
-              if (Object.keys(valueAry).length === length) {
-                createReactiveInputHandler({
-                  input: controller,
-                  value: valueAry,
-                  rels,
-                  title: props.title
-                })
-                // 触发输入后清除
-                valueAry = {}
-              }
-            })
-          } else {
-            log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[index]}`, JSON.stringify(value));
-            valueAry[props.inputs[index]] = value
-
-            if (Object.keys(valueAry).length === length) {
-              createReactiveInputHandler({
-                input: controller,
-                value: valueAry,
-                rels,
-                title: props.title
-              })
-              // 触发输入后清除
-              valueAry = {}
-            }
-          }
-        })
-      } else {
-        // 非多输入
-        const value = args[0]
-        if (value?.[SUBJECT_SUBSCRIBE]) {
-          value[SUBJECT_SUBSCRIBE]((value) => {
-            log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[0]}`, JSON.stringify(value));
-            createReactiveInputHandler({
-              input: controller,
-              value,
-              rels,
-              title: props.title
-            })
-          })
-        } else {
-          log(`${EXE_TITLE_MAP["input"]} ${props.title} | ${props.inputs[0]}`, JSON.stringify(value));
-          createReactiveInputHandler({
-            input: controller,
-            value,
-            rels,
-            title: props.title
-          })
-        }
-      }
-    }
-
-    return exeOutputs;
-  }
-
-  return exe;
-}
-
 // 事件
 export const createEventsHandle = (params) => {
   if (!params.controller._context.outputs) {
     params.controller._context.outputs = new Proxy(params.events || {}, {
       get(target, key) {
-        const event = context.comEvent?.[params.uid]?.[key]
+        const event = params.controller._context.appContext?.comEvent?.[params.uid]?.[key]
         if (event) {
           const { getVar, getOutput, getInput } = params.controller._context
           return (value) => {
@@ -603,7 +328,6 @@ export class Page {
 
   constructor(appRouter) {
     this.appRouter = appRouter
-    context.page = this
   }
 
   /** 获取当前页面入参 */
@@ -1257,24 +981,16 @@ export const createData = (params, Data) => {
   return params.controller._context.data
 }
 
-export const onComEvent = (comEvent) => {
-  context.comEvent = comEvent
-}
-
 export class Vars {
   [VARS_MARK] = true
-}
-
-export class BaseGlobalVars {
-  constructor() {
-    context.globalVars = this
-  }
 }
 
 export class BaseController {
   [BASECONTROLLER_MARK] = true
 }
 
-export { context }
 export * from "./MyBricksDescriptor"
 export * from "./createModuleEventsHandle"
+export * from "./createJSHandle"
+export * from "./Subject"
+export * from "./createEnv"
