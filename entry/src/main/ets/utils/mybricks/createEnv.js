@@ -1,7 +1,9 @@
+import { CONTROLLER_CONTEXT } from "./constant"
+
 export const createEnv = (params) => {
-  return params.controller._context.appContext?.env
+  return params.controller[CONTROLLER_CONTEXT].appContext?.env
 }
 
 export const _createEnv = (params) => {
-  return params.controller._context.appContext?._env
+  return params.controller[CONTROLLER_CONTEXT].appContext?._env
 }

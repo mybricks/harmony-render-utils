@@ -9,3 +9,4 @@ export const EXE_TITLE_MAP = {
   output: "输出",
   input: "输入"
 }
+export const CONTROLLER_CONTEXT = Symbol("CONTROLLER_CONTEXT")

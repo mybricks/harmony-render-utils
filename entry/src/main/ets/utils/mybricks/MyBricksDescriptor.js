@@ -1,4 +1,10 @@
-import { VARS_MARK, SUBJECT_VALUE, BASECONTROLLER_MARK, MYBRICKS_DESCRIPTOR } from "./constant"
+import {
+  VARS_MARK,
+  SUBJECT_VALUE,
+  BASECONTROLLER_MARK,
+  MYBRICKS_DESCRIPTOR,
+  CONTROLLER_CONTEXT
+} from "./constant"
 import { createModuleEventsHandle } from "./createModuleEventsHandle"
 import { log } from "./log"
 
@@ -181,19 +187,19 @@ export function MyBricksDescriptor(params) {
         const classController = controller
 
         Object.getOwnPropertyNames(classController).forEach((key) => {
-          const _context = classController[key]._context
-          if (_context) {
-            _context["this"] = this
-            _context['getVar'] = (varName) => {
+          const controllerContext = classController[key][CONTROLLER_CONTEXT]
+          if (controllerContext) {
+            controllerContext["this"] = this
+            controllerContext['getVar'] = (varName) => {
               return getVar({ that: this, varName })
             }
-            _context['getOutput'] = (outputName) => {
+            controllerContext['getOutput'] = (outputName) => {
               return getOutput({ that: this, outputName })
             }
-            _context['getInput'] = (inputName) => {
+            controllerContext['getInput'] = (inputName) => {
               return getInput({ that: this, inputName })
             }
-            _context['appContext'] = params.appContext
+            controllerContext['appContext'] = params.appContext
           }
         })
       }

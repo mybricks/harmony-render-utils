@@ -4,7 +4,8 @@ import {
   SUBJECT_SUBSCRIBE,
   VARS_MARK,
   BASECONTROLLER_MARK,
-  EXE_TITLE_MAP
+  EXE_TITLE_MAP,
+  CONTROLLER_CONTEXT
 } from "./constant"
 import { log } from "./log"
 import { Subject } from "./Subject"
@@ -58,7 +59,7 @@ export const createInputsHandle = (params, init = false) => {
     /** 组件基础信息 */
     const _comInfo = {}
     /** 全局 */
-    const _context = {
+    const controllerContext = {
       initStyles: {},
       initData: {},
     }
@@ -72,15 +73,15 @@ export const createInputsHandle = (params, init = false) => {
           return _inputEventsTodo
         } else if (key === "_comInfo") {
           return _comInfo
-        } else if (key === "_context") {
-          return _context
+        } else if (key === CONTROLLER_CONTEXT) {
+          return controllerContext
         } else if (key === "_setStyle") {
           return (value0, value1) => {
             const next = (value) => {
               if (Object.prototype.toString.call(value) === "[object Object]") {
                 Object.entries(value).forEach(([selector, nextStyle]) => {
-                  if (!_context.styles) {
-                    const { initStyles } = _context
+                  if (!controllerContext.styles) {
+                    const { initStyles } = controllerContext
                     if (!initStyles[selector]) {
                       initStyles[selector] = nextStyle
                     } else {
@@ -91,8 +92,8 @@ export const createInputsHandle = (params, init = false) => {
                     }
                     return
                   }
-                  const { style } = _context.styles.getStyle(selector)
-                  const updators = _context.styles.getUpdators(selector)
+                  const { style } = controllerContext.styles.getStyle(selector)
+                  const updators = controllerContext.styles.getUpdators(selector)
 
                   Object.entries(nextStyle).forEach(([key, value]) => {
                     style[key] = value
@@ -136,14 +137,14 @@ export const createInputsHandle = (params, init = false) => {
 
               const next = (params) => {
                 const { path, value } = params
-                if (!_context.data) {
-                  const { initData } = _context
+                if (!controllerContext.data) {
+                  const { initData } = controllerContext
                   initData[path] = value
                   return
                 }
 
                 safeSetByPath({
-                  data: _context.data,
+                  data: controllerContext.data,
                   path: path.split("."),
                   value
                 })
@@ -196,21 +197,21 @@ export const createInputsHandle = (params, init = false) => {
 
     return proxy;
   } else {
-    if (!params.controller._context.inputs) {
+    if (!params.controller[CONTROLLER_CONTEXT].inputs) {
       const { controller, title, styles } = params
-      const { _inputEvents, _comInfo, _inputEventsTodo, _context } = controller
+      const { _inputEvents, _comInfo, _inputEventsTodo, [CONTROLLER_CONTEXT]: controllerContext } = controller
       _comInfo.title = title;
-      _context.initModifier = {
+      controllerContext.initModifier = {
         visibility: styles?.root?.display === "none" ? Visibility.None : Visibility.Visible
       }
 
       const createVisibilityHandler = (visibilityState) => {
         return (value) => {
           const setVisibility = () => {
-            if (!_context.modifier?.attribute) {
-              _context.initModifier.visibility = visibilityState
+            if (!controllerContext.modifier?.attribute) {
+              controllerContext.initModifier.visibility = visibilityState
             } else {
-              _context.modifier.attribute?.visibility(visibilityState)
+              controllerContext.modifier.attribute?.visibility(visibilityState)
             }
           }
           if (value?.[SUBJECT_SUBSCRIBE]) {
@@ -226,10 +227,10 @@ export const createInputsHandle = (params, init = false) => {
       _inputEvents.hide = createVisibilityHandler(Visibility.None)
       _inputEvents.showOrHide = (value) => {
         const setVisibility = (value) => {
-          if (!_context.modifier?.attribute) {
-            _context.initModifier.visibility = !!value ? Visibility.Visible : Visibility.None
+          if (!controllerContext.modifier?.attribute) {
+            controllerContext.initModifier.visibility = !!value ? Visibility.Visible : Visibility.None
           } else {
-            _context.modifier.attribute?.visibility(!!value ? Visibility.Visible : Visibility.None)
+            controllerContext.modifier.attribute?.visibility(!!value ? Visibility.Visible : Visibility.None)
           }
         }
         if (value?.[SUBJECT_SUBSCRIBE]) {
@@ -276,21 +277,21 @@ export const createInputsHandle = (params, init = false) => {
         }
       })
 
-      params.controller._context.inputs = proxy;
+      params.controller[CONTROLLER_CONTEXT].inputs = proxy;
     }
 
-    return params.controller._context.inputs
+    return params.controller[CONTROLLER_CONTEXT].inputs
   }
 }
 
 // 事件
 export const createEventsHandle = (params) => {
-  if (!params.controller._context.outputs) {
-    params.controller._context.outputs = new Proxy(params.events || {}, {
+  if (!params.controller[CONTROLLER_CONTEXT].outputs) {
+    params.controller[CONTROLLER_CONTEXT].outputs = new Proxy(params.events || {}, {
       get(target, key) {
-        const event = params.controller._context.appContext?.comEvent?.[params.uid]?.[key]
+        const event = params.controller[CONTROLLER_CONTEXT].appContext?.comEvent?.[params.uid]?.[key]
         if (event) {
-          const { getVar, getOutput, getInput } = params.controller._context
+          const { getVar, getOutput, getInput } = params.controller[CONTROLLER_CONTEXT]
           return (value) => {
             event(value, {
               getVar,
@@ -306,7 +307,7 @@ export const createEventsHandle = (params) => {
     })
   }
 
-  return params.controller._context.outputs
+  return params.controller[CONTROLLER_CONTEXT].outputs
 }
 
 // 场景打开、输出
@@ -643,9 +644,9 @@ export const createFx = (fx) => {
 
 /** 创建插槽IO */
 export const createSlotsIO = (params) => {
-  if (!params.controller._context.slotsIO) {
+  if (!params.controller[CONTROLLER_CONTEXT].slotsIO) {
     const slotsIOMap = {}
-    params.controller._context.slotsIO = new Proxy({}, {
+    params.controller[CONTROLLER_CONTEXT].slotsIO = new Proxy({}, {
       get(_, key) {
         if (!slotsIOMap[key]) {
           const inputsMap = {}
@@ -690,7 +691,7 @@ export const createSlotsIO = (params) => {
     })
   }
 
-  return params.controller._context.slotsIO
+  return params.controller[CONTROLLER_CONTEXT].slotsIO
 }
 
 /**
@@ -794,8 +795,8 @@ class Styles {
  * 组件样式
  */
 export const createStyles = (params) => {
-  if (!params.controller._context.styles) {
-    const initStyles = params.controller._context.initStyles
+  if (!params.controller[CONTROLLER_CONTEXT].styles) {
+    const initStyles = params.controller[CONTROLLER_CONTEXT].initStyles
     const { styles, parentSlot } = params;
     Object.entries(initStyles).forEach(([selector, initStyle]) => {
       if (!styles[selector]) {
@@ -809,9 +810,9 @@ export const createStyles = (params) => {
     })
     if (parentSlot?.itemWrap) {
       const { root, ...other } = styles
-      params.controller._context.styles = new Styles(other)
+      params.controller[CONTROLLER_CONTEXT].styles = new Styles(other)
     } else {
-      params.controller._context.styles = new Styles(styles)
+      params.controller[CONTROLLER_CONTEXT].styles = new Styles(styles)
     }
   }
 
@@ -826,7 +827,7 @@ export const createStyles = (params) => {
       }
     },
     get(_, key) {
-      return params.controller._context.styles.getStyle(key)
+      return params.controller[CONTROLLER_CONTEXT].styles.getStyle(key)
     }
   })
 }
@@ -958,15 +959,15 @@ export const join = (lastSubject, nextSubject) => {
 };
 
 export const createModifier = (params, Modifier) => {
-  if (!params.controller._context.modifier) {
-    params.controller._context.modifier = new Modifier(params.controller._context.initModifier);
+  if (!params.controller[CONTROLLER_CONTEXT].modifier) {
+    params.controller[CONTROLLER_CONTEXT].modifier = new Modifier(params.controller[CONTROLLER_CONTEXT].initModifier);
   }
-  return params.controller._context.modifier
+  return params.controller[CONTROLLER_CONTEXT].modifier
 }
 
 export const createData = (params, Data) => {
-  if (!params.controller._context.data) {
-    const { initData } = params.controller._context
+  if (!params.controller[CONTROLLER_CONTEXT].data) {
+    const { initData } = params.controller[CONTROLLER_CONTEXT]
     const nextData = Object.assign({}, params.data)
     Object.entries(initData).forEach(([path, value]) => {
       safeSetByPath({
@@ -975,10 +976,10 @@ export const createData = (params, Data) => {
         value
       })
     })
-    params.controller._context.data = new Data(nextData)
+    params.controller[CONTROLLER_CONTEXT].data = new Data(nextData)
   }
 
-  return params.controller._context.data
+  return params.controller[CONTROLLER_CONTEXT].data
 }
 
 export class Vars {
