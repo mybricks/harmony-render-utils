@@ -1,3 +1,7 @@
+# [1.0.32](https://github.com/mybricks/harmony-render-utils/compare/1052f8a..9c830ee) (2025-10-10)
+ - 变量支持对「key」进行读写操作
+ - 使用Symbol替代_context
+
 # [1.0.31](https://github.com/mybricks/harmony-render-utils/compare/398106a..689e6ab) (2025-09-29)
  - 去除全局context，区分模块作用域
 
