@@ -137,6 +137,36 @@ export const createVariable = (...args) => {
     },
     unregisterChange(change) {
       ref.valueChanges.delete(change)
+    },
+    // 内置的赋值操作
+    setTrue() {
+      return variable.set(true)
+    },
+    setFalse() {
+      return variable.set(false)
+    },
+    setAryAdd(value) {
+      const nextValue = new Subject()
+
+      if (Array.isArray(ref.value[SUBJECT_VALUE])) {
+        const next = (value) => {
+          const arrayValue = ref.value[SUBJECT_VALUE].concat(value)
+          ref.value[SUBJECT_NEXT](arrayValue)
+          ref.valueChanges.forEach((valueChange) => {
+            valueChange(arrayValue)
+          })
+          nextValue[SUBJECT_NEXT](arrayValue)
+        }
+        if (value?.[SUBJECT_SUBSCRIBE]) {
+          value[SUBJECT_SUBSCRIBE]((value) => {
+            next(value)
+          })
+        } else {
+          next(value)
+        }
+      }
+
+      return nextValue
     }
   }
 
