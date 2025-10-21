@@ -1,3 +1,6 @@
+# [1.0.33](https://github.com/mybricks/harmony-render-utils/compare/6d19540..11282e2) (2025-10-21)
+ - 变量添加内置赋值操作，setTrue、setFalse、setAryAdd
+
 # [1.0.32](https://github.com/mybricks/harmony-render-utils/compare/1052f8a..9c830ee) (2025-10-10)
  - 变量支持对「key」进行读写操作
  - 使用Symbol替代_context
