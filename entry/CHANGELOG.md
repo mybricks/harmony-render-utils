@@ -1,3 +1,6 @@
+# [1.0.34](https://github.com/mybricks/harmony-render-utils/compare/c169caa..e45aa5f) (2025-10-27)
+ - _setData变量使用问题修复
+
 # [1.0.33](https://github.com/mybricks/harmony-render-utils/compare/6d19540..11282e2) (2025-10-21)
  - 变量添加内置赋值操作，setTrue、setFalse、setAryAdd
 
