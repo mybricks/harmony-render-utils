@@ -132,7 +132,7 @@ export const createInputsHandle = (params, init = false) => {
               }
 
               if (value?.[SUBJECT_SUBSCRIBE]) {
-                value0[SUBJECT_SUBSCRIBE]((value) => {
+                value[SUBJECT_SUBSCRIBE]((value) => {
                   next({ value, path })
                 })
               } else {
