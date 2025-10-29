@@ -10,8 +10,12 @@ export const createVariable = (...args) => {
   value[SUBJECT_NEXT](initValue)
   const ref = {
     value,
-    valueChanges: new Set(),
-    callBacksMap: new Map()
+    callBacksMap: new Map(),
+
+    // 注册change后，设置一个subject，用于触发change
+    changeValues: new Set(),
+    // change到上述subject的映射
+    changeValuesMap: new Map(),
   }
 
   const variable = {
@@ -36,7 +40,7 @@ export const createVariable = (...args) => {
     /** 赋值 */
     set(value, path) {
       const nextValue = new Subject()
-      const next = (value) => {
+      const next = (value, extra) => {
         if (path) {
           safeSetByPath({
             data: ref.value[SUBJECT_VALUE],
@@ -47,15 +51,15 @@ export const createVariable = (...args) => {
           value = ref.value[SUBJECT_VALUE]
         }
 
-        ref.value[SUBJECT_NEXT](value)
-        ref.valueChanges.forEach((valueChange) => {
-          valueChange(value)
+        ref.value[SUBJECT_NEXT](value, extra)
+        ref.changeValues.forEach((changeValue) => {
+          changeValue[SUBJECT_NEXT](value, extra)
         })
-        nextValue[SUBJECT_NEXT](value)
+        nextValue[SUBJECT_NEXT](value, extra)
       }
       if (value?.[SUBJECT_SUBSCRIBE]) {
-        value[SUBJECT_SUBSCRIBE]((value) => {
-          next(value)
+        value[SUBJECT_SUBSCRIBE]((value, extra) => {
+          next(value, extra)
         })
       } else {
         next(value)
@@ -67,8 +71,8 @@ export const createVariable = (...args) => {
       const nextValue = new Subject()
       const next = () => {
         ref.value[SUBJECT_NEXT](initValue)
-        ref.valueChanges.forEach((valueChange) => {
-          valueChange(initValue)
+        ref.changeValues.forEach((changeValue) => {
+          changeValue[SUBJECT_NEXT](initValue)
         })
         nextValue[SUBJECT_NEXT](initValue)
       }
@@ -83,20 +87,15 @@ export const createVariable = (...args) => {
     },
     /** 值变更监听 */
     changed() {
-      const subject = new Subject();
-
-      const change = (value) => {
-        subject[SUBJECT_NEXT](value)
-      }
-
-      ref.valueChanges.add(change);
+      const changeValue = new Subject();
+      ref.changeValues.add(changeValue);
 
       const result = {
         destroy() {
-          ref.valueChanges.delete(change)
+          ref.changeValues.delete(changeValue)
         },
         subscribe(next) {
-          subject[SUBJECT_SUBSCRIBE](next)
+          changeValue[SUBJECT_SUBSCRIBE](next)
         }
       }
 
@@ -130,13 +129,22 @@ export const createVariable = (...args) => {
       }
     },
     registerChange(change) {
-      ref.valueChanges.add(change)
+      const changeValue = new Subject()
+      // 默认执行，进行初始化动作
+      change(changeValue)
+
+      ref.changeValues.add(changeValue)
+      ref.changeValuesMap.set(change, changeValue)
+
       if (execOnceOnReg) {
-        change(ref.value[SUBJECT_VALUE])
+        // 默认执行
+        changeValue[SUBJECT_NEXT](ref.value[SUBJECT_VALUE])
       }
     },
     unregisterChange(change) {
-      ref.valueChanges.delete(change)
+      const changeValue = ref.changeValuesMap.get(change)
+      ref.changeValues.delete(changeValue)
+      ref.changeValuesMap.delete(change)
     },
     // 内置的赋值操作
     setTrue() {
@@ -152,8 +160,8 @@ export const createVariable = (...args) => {
         const next = (value) => {
           const arrayValue = ref.value[SUBJECT_VALUE].concat(value)
           ref.value[SUBJECT_NEXT](arrayValue)
-          ref.valueChanges.forEach((valueChange) => {
-            valueChange(arrayValue)
+          ref.changeValues.forEach((changeValue) => {
+            changeValue[SUBJECT_NEXT](value)
           })
           nextValue[SUBJECT_NEXT](arrayValue)
         }

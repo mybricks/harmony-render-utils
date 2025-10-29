@@ -5,11 +5,13 @@ import {
   VARS_MARK,
   BASECONTROLLER_MARK,
   EXE_TITLE_MAP,
-  CONTROLLER_CONTEXT
+  CONTROLLER_CONTEXT,
+  EXCUTE_TYPE_KEY,
+  EXCUTE_TYPE_VALUE
 } from "./constant"
 import { log } from "./log"
 import { Subject } from "./Subject"
-import { safeSetByPath } from "./utils"
+import { safeSetByPath, isObject } from "./utils"
 import { createReactiveInputHandler } from "./createReactiveInputHandler"
 
 /** 合并数据流 */
@@ -43,6 +45,9 @@ export const createInputsHandle = (params, init = false) => {
     const controllerContext = {
       initStyles: {},
       initData: {},
+      dataChangedSubjects: {},
+      // 唯一标记
+      mark: {}
     }
 
     const proxy = new Proxy({}, {
@@ -127,18 +132,32 @@ export const createInputsHandle = (params, init = false) => {
                 safeSetByPath({
                   data: controllerContext.data,
                   path: path.split("."),
-                  value
+                  value: {
+                    value,
+                    [EXCUTE_TYPE_KEY]: EXCUTE_TYPE_VALUE.DATACHANGED
+                  }
                 })
               }
 
               if (value?.[SUBJECT_SUBSCRIBE]) {
-                value[SUBJECT_SUBSCRIBE]((value) => {
+                value[SUBJECT_SUBSCRIBE]((value, extra) => {
+                  if (extra?.[EXCUTE_TYPE_KEY] === EXCUTE_TYPE_VALUE.DATACHANGED && extra?.controllerMark === controllerContext.mark) {
+                    // 数据流来自「EXCUTE_TYPE_VALUE.DATACHANGED」且来自自身，不再继续执行，避免死循环
+                    return
+                  }
                   next({ value, path })
                 })
               } else {
                 next({ value, path })
               }
             }
+          }
+        } else if (key === "_dataChanged") {
+          return (path) => {
+            const subject = new Subject();
+            controllerContext.dataChangedSubjects[path] = subject;
+
+            return subject;
           }
         }
 
@@ -220,7 +239,7 @@ export const createInputsHandle = (params, init = false) => {
           setVisibility(value)
         }
       }
-        // 处理显示隐藏todo项
+      // 处理显示隐藏todo项
       ["show", "hide", "showOrHide"].forEach((key) => {
         const todo = _inputEventsTodo[key]
         if (todo) {
@@ -804,9 +823,54 @@ export const createModifier = (params, Modifier) => {
   return params.controller[CONTROLLER_CONTEXT].modifier
 }
 
+const DATA_PROXY = Symbol("DATA_PROXY");
+const dataProxy = (params) => {
+  const { data, path, config } = params;
+  return new Proxy(data, {
+    get(target, key, receiver) {
+      if (key === DATA_PROXY) {
+        return true;
+      }
+      const value = Reflect.get(target, key, receiver);
+      if (typeof key !== "string" || target.hasOwnProperty(key)) {
+        return value
+      }
+      if (isObject(value)) {
+        if (value[DATA_PROXY]) {
+          return value;
+        }
+
+        return dataProxy({
+          data: value,
+          path: path ? `${path}.${key}` : key,
+          config
+        });
+      }
+      return value;
+    },
+    set(target, key, value, receiver) {
+      if (typeof key !== "string" || target.hasOwnProperty(key)) {
+        Reflect.set(target, key, value, receiver);
+      } else {
+        if (!value?.[EXCUTE_TYPE_KEY]) {
+          Reflect.set(target, key, value, receiver);
+          // 目前只有「EXCUTE_TYPE_VALUE.DATACHANGED」，所以判断有「EXCUTE_TYPE_KEY」就行
+          config?.set?.({
+            value,
+            path: path ? `${path}.${key}` : key,
+          });
+        } else {
+          Reflect.set(target, key, value.value, receiver);
+        }
+      }
+      return true;
+    },
+  });
+}
+
 export const createData = (params, Data) => {
   if (!params.controller[CONTROLLER_CONTEXT].data) {
-    const { initData } = params.controller[CONTROLLER_CONTEXT]
+    const { initData, dataChangedSubjects, mark } = params.controller[CONTROLLER_CONTEXT]
     const nextData = Object.assign({}, params.data)
     Object.entries(initData).forEach(([path, value]) => {
       safeSetByPath({
@@ -815,7 +879,25 @@ export const createData = (params, Data) => {
         value
       })
     })
-    params.controller[CONTROLLER_CONTEXT].data = new Data(nextData)
+
+    const data = new Data(nextData)
+    const observeData = dataProxy({
+      data,
+      path: "",
+      config: {
+        set(params) {
+          const dataChangedSubject = dataChangedSubjects[params.path];
+          if (dataChangedSubject) {
+            dataChangedSubject[SUBJECT_NEXT](params.value, {
+              [EXCUTE_TYPE_KEY]: EXCUTE_TYPE_VALUE.DATACHANGED,
+              controllerMark: mark,
+            })
+          }
+        }
+      }
+    })
+
+    params.controller[CONTROLLER_CONTEXT].data = observeData
   }
 
   return params.controller[CONTROLLER_CONTEXT].data
@@ -830,8 +912,13 @@ export class BaseController {
 }
 
 export * from "./MyBricksDescriptor"
+
 export * from "./createModuleEventsHandle"
+
 export * from "./createJSHandle"
+
 export * from "./Subject"
+
 export * from "./createEnv"
+
 export * from "./variables"

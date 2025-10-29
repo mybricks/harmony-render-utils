@@ -10,3 +10,7 @@ export const EXE_TITLE_MAP = {
   input: "输入"
 }
 export const CONTROLLER_CONTEXT = Symbol("CONTROLLER_CONTEXT")
+export const EXCUTE_TYPE_KEY = Symbol("EXCUTE_TYPE_KEY")
+export const EXCUTE_TYPE_VALUE = {
+  DATACHANGED: Symbol('DATACHANGED')
+}

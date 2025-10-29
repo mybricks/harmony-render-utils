@@ -22,8 +22,8 @@ export class Subject {
 
         const subjectNext = new SubjectNext(prop)
 
-        target[SUBJECT_SUBSCRIBE]((value) => {
-          subjectNext[SUBJECT_NEXT](value)
+        target[SUBJECT_SUBSCRIBE]((value, extra) => {
+          subjectNext[SUBJECT_NEXT](value, extra)
         })
 
         return subjectNext
@@ -35,10 +35,10 @@ export class Subject {
     return this._values[0]
   }
 
-  [SUBJECT_NEXT](value) {
+  [SUBJECT_NEXT](value, extra) {
     log(this._log, JSON.stringify(value))
     this._values[0] = value
-    this._observers.forEach((observer) => observer(value))
+    this._observers.forEach((observer) => observer(value, extra))
   }
 
   [SUBJECT_SUBSCRIBE](observer) {
@@ -86,10 +86,10 @@ class SubjectNext extends Subject {
     })
   }
 
-  [SUBJECT_NEXT](value) {
+  [SUBJECT_NEXT](value, extra) {
     this._values[0] = value
     const nextValue = getValueNextByPath({ value, path: this._path })
-    this._observers.forEach((observer) => observer(nextValue))
+    this._observers.forEach((observer) => observer(nextValue, extra))
   }
 
   [SUBJECT_SUBSCRIBE](observer) {
