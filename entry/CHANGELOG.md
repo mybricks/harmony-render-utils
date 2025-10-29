@@ -1,3 +1,6 @@
+# [1.0.35](https://github.com/mybricks/harmony-render-utils/compare/14b23f1..a96fe59) (2025-10-29)
+ - 变量双向绑定能力支持
+
 # [1.0.34](https://github.com/mybricks/harmony-render-utils/compare/c169caa..e45aa5f) (2025-10-27)
  - _setData变量使用问题修复
 
