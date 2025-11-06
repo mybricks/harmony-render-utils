@@ -1,4 +1,5 @@
 import { Subject } from "./Subject"
+import { context } from "./context"
 import { safeSetByPath, safeGetByPath } from "./utils"
 import { SUBJECT_NEXT, SUBJECT_SUBSCRIBE, SUBJECT_VALUE } from "./constant"
 
@@ -99,11 +100,11 @@ export const createVariable = (...args) => {
         }
       }
 
-      if (apiRun) {
-        if (!apiRunVariablesSubject[apiRun]) {
-          apiRunVariablesSubject[apiRun] = [result]
+      if (context.apiRun) {
+        if (!context.apiRunVariablesSubject[context.apiRun]) {
+          context.apiRunVariablesSubject[context.apiRun] = [result]
         } else {
-          apiRunVariablesSubject[apiRun].push(result)
+          context.apiRunVariablesSubject[context.apiRun].push(result)
         }
       }
 

@@ -11,6 +11,7 @@ import {
 } from "./constant"
 import { log } from "./log"
 import { Subject } from "./Subject"
+import { context } from "./context"
 import { safeSetByPath, isObject } from "./utils"
 import { createReactiveInputHandler } from "./createReactiveInputHandler"
 
@@ -690,10 +691,6 @@ export const createStyles = (params) => {
   })
 }
 
-/** [TODO] 记录API调用过程中变量的监听，调用回调后销毁 */
-let apiRun = null;
-let apiRunVariablesSubject = {};
-
 /**
  * @returns {any}
  */
@@ -711,11 +708,11 @@ export const transformApi = (api) => {
     })
     let isDispose = false;
 
-    apiRun = id;
+    context.apiRun = id;
 
     const res = api(value)
 
-    apiRun = null;
+    context.apiRun = null;
 
     if (res) {
       Object.entries(res).forEach(([key, value]) => {
@@ -730,7 +727,7 @@ export const transformApi = (api) => {
             isDispose = true
             outputs[key][SUBJECT_NEXT](value)
             cb?.[key]?.(value)
-            apiRunVariablesSubject[id]?.forEach((subject) => {
+            context.apiRunVariablesSubject[id]?.forEach((subject) => {
               subject.destroy()
             })
           })
@@ -741,7 +738,7 @@ export const transformApi = (api) => {
           isDispose = true
           outputs[key][SUBJECT_NEXT](value)
           cb?.[key]?.(value)
-          apiRunVariablesSubject[id]?.forEach((subject) => {
+          context.apiRunVariablesSubject[id]?.forEach((subject) => {
             subject.destroy()
           })
         }
