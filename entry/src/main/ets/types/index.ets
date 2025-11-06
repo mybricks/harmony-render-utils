@@ -93,4 +93,6 @@ export declare namespace MyBricks {
   }
 
   type Api = (value: Any, callBack?: Any) => Controller
+
+  type Event = (value: Any) => Controller
 }
