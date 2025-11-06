@@ -1,3 +1,6 @@
+# [1.0.36](https://github.com/mybricks/harmony-render-utils/compare/fe9ab9f..3474fe3) (2025-11-06)
+ - 修复api内监听全局变量报错问题
+
 # [1.0.35](https://github.com/mybricks/harmony-render-utils/compare/14b23f1..a96fe59) (2025-10-29)
  - 变量双向绑定能力支持
 
