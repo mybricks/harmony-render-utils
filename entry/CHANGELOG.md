@@ -1,3 +1,6 @@
+# [1.0.38](https://github.com/mybricks/harmony-render-utils/compare/452d12e..4e30a75) (2025-11-07)
+ - 路由跳转时机调整
+
 # [1.0.37](https://github.com/mybricks/harmony-render-utils/compare/491fc3b..e63030d) (2025-11-06)
  - 添加事件处理
 
