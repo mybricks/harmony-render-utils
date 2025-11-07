@@ -376,25 +376,34 @@ export class Page {
 
     if (value?.[SUBJECT_SUBSCRIBE]) {
       value[SUBJECT_SUBSCRIBE]((value) => {
-        params.controller.commit[SUBJECT_NEXT](value)
         this.appRouter.pop()
+        setTimeout(() => {
+          params.controller.commit[SUBJECT_NEXT](value)
+        }, 100)
       })
     } else {
-      params.controller.commit[SUBJECT_NEXT](value)
       this.appRouter.pop()
+      setTimeout(() => {
+        params.controller.commit[SUBJECT_NEXT](value)
+      }, 100)
     }
   }
 
   /** 取消 */
   cancel(name, value) {
     const params = this.appRouter.getParams(name)
-    this.appRouter.pop()
     if (value?.[SUBJECT_SUBSCRIBE]) {
       value[SUBJECT_SUBSCRIBE]((value) => {
-        params.controller.cancel[SUBJECT_NEXT](value)
+        this.appRouter.pop()
+        setTimeout(() => {
+          params.controller.cancel[SUBJECT_NEXT](value)
+        }, 100)
       })
     } else {
-      params.controller.cancel[SUBJECT_NEXT](value)
+      this.appRouter.pop()
+      setTimeout(() => {
+        params.controller.cancel[SUBJECT_NEXT](value)
+      }, 100)
     }
   }
 
@@ -415,12 +424,16 @@ export class Page {
     const params = this.appRouter.getParams(name)
     if (value?.[SUBJECT_SUBSCRIBE]) {
       value[SUBJECT_SUBSCRIBE]((value) => {
-        params.controller.close[SUBJECT_NEXT](value)
         this.appRouter.pop()
+        setTimeout(() => {
+          params.controller.close[SUBJECT_NEXT](value)
+        }, 100)
       })
     } else {
-      params.controller.close[SUBJECT_NEXT](value)
       this.appRouter.pop()
+      setTimeout(() => {
+        params.controller.close[SUBJECT_NEXT](value)
+      }, 100)
     }
   }
 }
