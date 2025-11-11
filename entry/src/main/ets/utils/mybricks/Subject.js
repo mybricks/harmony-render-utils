@@ -2,6 +2,7 @@ import { log } from "./log"
 import {
   SUBJECT_NEXT,
   SUBJECT_VALUE,
+  SUBJECT_EMPTY,
   SUBJECT_SUBSCRIBE,
   SUBJECT_UNSUBSCRIBE
 } from "./constant"
@@ -11,6 +12,7 @@ export class Subject {
   _values = []
   _observers = new Set()
   _log = undefined
+  _empty = true;
 
   constructor(params = {}) {
     this._log = params.log
@@ -35,9 +37,14 @@ export class Subject {
     return this._values[0]
   }
 
+  get [SUBJECT_EMPTY]() {
+    return this._empty;
+  }
+
   [SUBJECT_NEXT](value, extra) {
     log(this._log, JSON.stringify(value))
     this._values[0] = value
+    this._empty = false
     this._observers.forEach((observer) => observer(value, extra))
   }
 
@@ -88,6 +95,7 @@ class SubjectNext extends Subject {
 
   [SUBJECT_NEXT](value, extra) {
     this._values[0] = value
+    this._empty = false
     const nextValue = getValueNextByPath({ value, path: this._path })
     this._observers.forEach((observer) => observer(nextValue, extra))
   }

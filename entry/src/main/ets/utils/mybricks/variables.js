@@ -1,14 +1,16 @@
 import { Subject } from "./Subject"
 import { context } from "./context"
 import { safeSetByPath, safeGetByPath } from "./utils"
-import { SUBJECT_NEXT, SUBJECT_SUBSCRIBE, SUBJECT_VALUE } from "./constant"
+import { SUBJECT_NEXT, SUBJECT_SUBSCRIBE, SUBJECT_VALUE, SUBJECT_EMPTY } from "./constant"
 
 /** 创建变量 */
 export const createVariable = (...args) => {
-  const execOnceOnReg = args.length > 0
+  const hasDefaultValue = args.length > 0
   const initValue = args[0]
   const value = new Subject()
-  value[SUBJECT_NEXT](initValue)
+  if (hasDefaultValue) {
+    value[SUBJECT_NEXT](initValue)
+  }
   const ref = {
     value,
     callBacksMap: new Map(),
@@ -137,8 +139,8 @@ export const createVariable = (...args) => {
       ref.changeValues.add(changeValue)
       ref.changeValuesMap.set(change, changeValue)
 
-      if (execOnceOnReg) {
-        // 默认执行
+      if (!ref.value[SUBJECT_EMPTY]) {
+        // 有值就默认执行
         changeValue[SUBJECT_NEXT](ref.value[SUBJECT_VALUE])
       }
     },
