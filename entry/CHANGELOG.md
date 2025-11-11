@@ -1,3 +1,6 @@
+# [1.0.39](https://github.com/mybricks/harmony-render-utils/compare/26569fc..8a671ae) (2025-11-11)
+ - 变量默认执行逻辑调整
+
 # [1.0.38](https://github.com/mybricks/harmony-render-utils/compare/452d12e..4e30a75) (2025-11-07)
  - 路由跳转时机调整
 
