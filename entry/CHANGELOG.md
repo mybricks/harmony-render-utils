@@ -1,3 +1,6 @@
+# [1.0.40](https://github.com/mybricks/harmony-render-utils/compare/032c443..f12b2d7) (2025-11-21)
+ - 变量值变更监听
+
 # [1.0.39](https://github.com/mybricks/harmony-render-utils/compare/26569fc..8a671ae) (2025-11-11)
  - 变量默认执行逻辑调整
 
