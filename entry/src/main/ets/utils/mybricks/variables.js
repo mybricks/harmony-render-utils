@@ -97,7 +97,7 @@ export const createVariable = (...args) => {
         destroy() {
           ref.changeValues.delete(changeValue)
         },
-        subscribe(next) {
+        [SUBJECT_SUBSCRIBE](next) {
           changeValue[SUBJECT_SUBSCRIBE](next)
         }
       }
