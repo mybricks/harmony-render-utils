@@ -3,6 +3,7 @@ import {
   SUBJECT_NEXT,
   SUBJECT_VALUE,
   SUBJECT_EMPTY,
+  SUBJECT_SETVALUE,
   SUBJECT_SUBSCRIBE,
   SUBJECT_UNSUBSCRIBE
 } from "./constant"
@@ -39,6 +40,11 @@ export class Subject {
 
   get [SUBJECT_EMPTY]() {
     return this._empty;
+  }
+
+  [SUBJECT_SETVALUE](value) {
+    this._values[0] = value;
+    this._empty = false;
   }
 
   [SUBJECT_NEXT](value, extra) {

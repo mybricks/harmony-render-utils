@@ -1,7 +1,7 @@
 import { Subject } from "./Subject"
 import { context } from "./context"
 import { safeSetByPath, safeGetByPath } from "./utils"
-import { SUBJECT_NEXT, SUBJECT_SUBSCRIBE, SUBJECT_VALUE, SUBJECT_EMPTY } from "./constant"
+import { SUBJECT_NEXT, SUBJECT_SUBSCRIBE, SUBJECT_VALUE, SUBJECT_EMPTY, SUBJECT_SETVALUE } from "./constant"
 
 /** 创建变量 */
 export const createVariable = (...args) => {
@@ -45,6 +45,10 @@ export const createVariable = (...args) => {
       const nextValue = new Subject()
       const next = (value, extra) => {
         if (path) {
+          const isEmpty = ref.value[SUBJECT_EMPTY]
+          if (isEmpty) {
+            ref.value[SUBJECT_SETVALUE]({})
+          }
           safeSetByPath({
             data: ref.value[SUBJECT_VALUE],
             path: path.split("."),
